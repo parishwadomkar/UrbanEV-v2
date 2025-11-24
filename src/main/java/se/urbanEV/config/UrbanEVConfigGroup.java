@@ -82,6 +82,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     private static final String ALPHA_SCALE_COST = "alphaScaleCost";
     static final String ALPHA_SCALE_COST_EXP = "[dimensionless] technical scaling factor applied to betaMoney in EV scoring. 1.0 = no scaling; values << 1.0 dampen the money term.";
 
+    private static final String ENABLE_SMART_CHARGING = "enableSmartCharging";
+    private static final String AWARENESS_FACTOR = "awarenessFactor";
+    private static final String COINCIDENCE_FACTOR = "coincidenceFactor";
 
 
     // Charger parameters
@@ -157,6 +160,10 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     @PositiveOrZero
     private double alphaScaleCost = 1.0;  // scaling factor for the costing
 
+    private boolean enableSmartCharging = false;
+    private double awarenessFactor = 0.0;
+    private double coincidenceFactor = 0.0;
+
 
 
 
@@ -191,6 +198,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(PUBLIC_CHARGING_COST, PUBLIC_CHARGING_COST_EXP);
         map.put(BETA_MONEY, BETA_MONEY_EXP);
         map.put(ALPHA_SCALE_COST, ALPHA_SCALE_COST_EXP);
+        map.put(ENABLE_SMART_CHARGING, "Enable smart charging behavior: delayed start times, ToU awareness, and coincidence effect.");
+        map.put(COINCIDENCE_FACTOR, "Probability [0.0–1.0] of delay caused by charging congestion or 'coincidence factor'.");
+        map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
 
         return map;
     }
@@ -401,6 +411,42 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(ALPHA_SCALE_COST)
     public void setAlphaScaleCost(double alphaScaleCost) {
         this.alphaScaleCost = alphaScaleCost;
+    }
+
+    @StringGetter(ENABLE_SMART_CHARGING)
+    public boolean isEnableSmartCharging() {
+        return enableSmartCharging;
+    }
+
+    @StringSetter(ENABLE_SMART_CHARGING)
+    public void setEnableSmartCharging(boolean enableSmartCharging) {
+        this.enableSmartCharging = enableSmartCharging;
+    }
+
+    @StringSetter(AWARENESS_FACTOR)
+    public void setAwarenessFactor(double awarenessFactor) {
+        if (awarenessFactor < 0.0 || awarenessFactor > 1.0) {
+            log.warn("UrbanEVConfigGroup: awarenessFactor outside [0,1] (" + awarenessFactor + "), clamping.");
+        }
+        this.awarenessFactor = Math.max(0.0, Math.min(1.0, awarenessFactor));
+    }
+
+    @StringSetter(COINCIDENCE_FACTOR)
+    public void setCoincidenceFactor(double coincidenceFactor) {
+        if (coincidenceFactor < 0.0 || coincidenceFactor > 1.0) {
+            log.warn("UrbanEVConfigGroup: coincidenceFactor outside [0,1] (" + coincidenceFactor + "), clamping.");
+        }
+        this.coincidenceFactor = Math.max(0.0, Math.min(1.0, coincidenceFactor));
+    }
+
+    @StringGetter(AWARENESS_FACTOR)
+    public double getAwarenessFactor() {
+        return awarenessFactor;
+    }
+
+    @StringGetter(COINCIDENCE_FACTOR)
+    public double getCoincidenceFactor() {
+        return coincidenceFactor;
     }
 
     public void logIfSuspicious() {

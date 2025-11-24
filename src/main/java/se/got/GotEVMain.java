@@ -53,21 +53,8 @@ public class GotEVMain {
         ConfigGroup[] configGroups = new ConfigGroup[]{new EvConfigGroup(), new UrbanEVConfigGroup()};
         Config config = ConfigUtils.loadConfig(configPath, configGroups);
 
-        // Sanity-check UrbanEV monetary params on config
-        UrbanEVConfigGroup urbanEvCfg = (UrbanEVConfigGroup) config.getModules().get(UrbanEVConfigGroup.GROUP_NAME);
-        if (urbanEvCfg != null) {
-            urbanEvCfg.logIfSuspicious();
-        }
-
         if (initIterations > 0) {
             Config initConfig = ConfigUtils.loadConfig(configPath, configGroups);
-
-            UrbanEVConfigGroup initUrbanEvCfg =
-                    (UrbanEVConfigGroup) initConfig.getModules().get(UrbanEVConfigGroup.GROUP_NAME);
-            if (initUrbanEvCfg != null) {
-                initUrbanEvCfg.logIfSuspicious();
-            }
-
             initConfig.controler().setLastIteration(initIterations);
             initConfig.controler().setOutputDirectory(initConfig.controler().getOutputDirectory() + "/init");
             loadConfigAndRun(initConfig);
@@ -78,6 +65,7 @@ public class GotEVMain {
         }
 
         loadConfigAndRun(config);
+
     }
 
     private static void loadConfigAndRun(Config config) {
@@ -117,7 +105,33 @@ public class GotEVMain {
         });
 
         Population population = controler.getScenario().getPopulation();
-        population.getPersons().entrySet().forEach(entry->{entry.getValue().getAttributes().putAttribute("subpopulation", "nonCriticalSOC");});
+
+// Access UrbanEV config from the same Config object used to load the scenario
+        UrbanEVConfigGroup urbanEvCfg =
+                (UrbanEVConfigGroup) controler.getConfig().getModules().get(UrbanEVConfigGroup.GROUP_NAME);
+        double awareness = urbanEvCfg != null ? urbanEvCfg.getAwarenessFactor() : 0.0;
+
+// Stable RNG for attribute assignment (use config seed so it's reproducible)
+        java.util.Random rng = new java.util.Random(controler.getConfig().global().getRandomSeed());
+
+        int awareCount = 0;
+        int total = 0;
+        for (Person person : population.getPersons().values()) {
+            person.getAttributes().putAttribute("subpopulation", "nonCriticalSOC");
+
+            boolean aware = rng.nextDouble() <= awareness;
+            person.getAttributes().putAttribute("smartChargingAware", aware);
+
+            total++;
+            if (aware) {
+                awareCount++;
+            }
+        }
+
+        log.info(String.format(
+                "Smart charging awareness assignment: %.1f%% configured → %d / %d persons marked smartChargingAware=true",
+                awareness * 100.0, awareCount, total
+        ));
 
         controler.run();
     }
