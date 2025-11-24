@@ -6,6 +6,7 @@ public final class ChargingCostUtils {
     }
 
     /**
+     * created by omkarp, 10.01.2025
      * Returns the hourly ToU multiplier M_temporal(t) for a given simulation time.
      * @param timeSeconds simulation time in seconds (MATSim standard)
      * @return multiplier (dimensionless)
@@ -28,3 +29,4 @@ public final class ChargingCostUtils {
         }
     }
 }
+
