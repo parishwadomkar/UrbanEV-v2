@@ -1,0 +1,9 @@
+<!DOCTYPE vehicletypes SYSTEM "../dtd/vehicletypes.dtd">
+<vehicletypes>
+    <type name="car" consumption="0.0" max_charging_rate="0.5" mass="1500" width="1.800" height="1.500" length="4.500" cw="0.3" ft="0.01" cb="0.191" spr="0.935"/>
+    <type name="Volvo" consumption="15.6" max_charging_rate="1.5" mass="1545" width="1.788" height="1.530" length="4.490" cw="0.3" ft="0.01" cb="0.191" spr="0.935"/>
+    <type name="renault_zoe" consumption="17.2" max_charging_rate="1.5" mass="1577" width="1.787" height="1.562" length="4.087" cw="0.269" ft="0.01" cb="0.191" spr="0.935"/>
+    <type name="tesla_model_Y" consumption="18.3" max_charging_rate="2.0" mass="1684" width="1.850" height="1.443" length="4.694" cw="0.3" ft="0.01" cb="0.191" spr="0.935"/>
+    <type name="VW_ID4" consumption="16.3" max_charging_rate="2.0" mass="1684" width="1.850" height="1.443" length="4.694" cw="0.3" ft="0.01" cb="0.191" spr="0.935"/>
+    <type name="bmw_i3" consumption="21.0" max_charging_rate="2.0" mass="2445" width="1.935" height="1.629" length="4.901" cw="0.3" ft="0.01" cb="0.191" spr="0.935"/>
+</vehicletypes>
