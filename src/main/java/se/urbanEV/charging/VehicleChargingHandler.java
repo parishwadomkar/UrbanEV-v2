@@ -76,36 +76,71 @@ public class VehicleChargingHandler
     private Map<Id<Person>, Id<Vehicle>> lastVehicleUsed = new HashMap<>();
     private Map<Id<ElectricVehicle>, Id<Charger>> vehiclesAtChargers = new HashMap<>();
 
-    // track SOC and time at the start of each charging session: OmkarP.(2025)
+    // track SOC and time at the start of each charging session- for smart rescheduling
     private final Map<Id<ElectricVehicle>, Double> chargeStartSoc = new HashMap<>();
     private final Map<Id<ElectricVehicle>, Double> chargeStartTime = new HashMap<>();
 
-	private final ChargingInfrastructure chargingInfrastructure;
-	private final Network network;
-	private final ElectricFleet electricFleet;
-	private final Population population;
-	private final int parkingSearchRadius;
+    private final ChargingInfrastructure chargingInfrastructure;
+    private final Network network;
+    private final ElectricFleet electricFleet;
+    private final Population population;
+    private final int parkingSearchRadius;
+    private final EventsManager eventsManager;
 
-	private final EventsManager eventsManager;
+    // scheduler for smart charging: OmkarP.(2025)
+    private final UrbanEVConfigGroup urbanEvCfg;
+    private final SmartChargingScheduler smartScheduler;
 
-	@Inject
-	public VehicleChargingHandler(ChargingInfrastructure chargingInfrastructure,
-								  Network network,
-								  ElectricFleet electricFleet,
-								  Population population,
-								  EventsManager eventsManager,
-								  MobsimScopeEventHandling events,
-								  UrbanEVConfigGroup urbanEVCfg) {
-		this.chargingInfrastructure = chargingInfrastructure;
-		this.network = network;
-		this.electricFleet = electricFleet;
-		this.population = population;
-		this.eventsManager = eventsManager;
-		this.parkingSearchRadius = urbanEVCfg.getParkingSearchRadius();
-		events.addMobsimScopeHandler(this);
-	}
+    @Inject
+    public VehicleChargingHandler(ChargingInfrastructure chargingInfrastructure,
+                                  Network network,
+                                  ElectricFleet electricFleet,
+                                  Population population,
+                                  EventsManager eventsManager,
+                                  MobsimScopeEventHandling events,
+                                  UrbanEVConfigGroup urbanEVCfg) {
+        this.chargingInfrastructure = chargingInfrastructure;
+        this.network = network;
+        this.electricFleet = electricFleet;
+        this.population = population;
+        this.eventsManager = eventsManager;
+        this.parkingSearchRadius = urbanEVCfg.getParkingSearchRadius();
+        this.urbanEvCfg = urbanEVCfg;
 
-	@Override
+        // instantiate smart scheduler and register both handlers for MobsimScopeEvents: OmkarP.(2025)
+        this.smartScheduler = new SmartChargingScheduler(chargingInfrastructure, electricFleet, this);
+
+        events.addMobsimScopeHandler(this);
+        events.addMobsimScopeHandler(this.smartScheduler);
+    }
+
+    /**
+     * Implemented by omkarp, 10.01.2025
+     * Called by SmartChargingScheduler when a deferred home-charging session actually plugs in.
+     * Responsible for registering start SOC/time so that ActivityEndEvent can compute energyChargedKWh.
+     */
+    public void onSmartChargePlugged(Id<ElectricVehicle> evId, Id<Charger> chargerId, double time) {
+        ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
+        if (ev == null) {
+            log.warn("onSmartChargePlugged: EV " + evId + " not found in fleet at t=" + time);
+            return;
+        }
+
+        vehiclesAtChargers.put(evId, chargerId);
+
+        double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
+        chargeStartSoc.put(evId, socFraction);
+        chargeStartTime.put(evId, time);
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(
+                    "onSmartChargePlugged: EV %s plugged at charger %s at t=%.0f, soc=%.3f",
+                    evId, chargerId, time, socFraction
+            ));
+        }
+    }
+
+    @Override
 	public void handleEvent(ActivityStartEvent event) {
 		String actType = event.getActType();
 		Id<Person> personId = event.getPersonId();
@@ -119,19 +154,100 @@ public class VehicleChargingHandler
 
                 if (event.getActType().endsWith(CHARGING_IDENTIFIER)) {
                     Activity activity = getActivity(person, event.getTime());
-                    Coord activityCoord = activity != null ?
-                            activity.getCoord() : network.getLinks().get(event.getLinkId()).getCoord();
+                    Coord activityCoord = activity != null
+                            ? activity.getCoord()
+                            : network.getLinks().get(event.getLinkId()).getCoord();
                     Charger selectedCharger = findBestCharger(activityCoord, ev);
 
-                    if (selectedCharger != null) { // if charger was found, start charging
-                        selectedCharger.getLogic().addVehicle(ev, event.getTime());
-                        vehiclesAtChargers.put(evId, selectedCharger.getId());
-                        walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
+                    if (selectedCharger != null) {
+                        boolean isHomeChargingAct =
+                                actType.startsWith("home") && actType.endsWith(CHARGING_IDENTIFIER);
 
-                        // remember SOC and time at start of this charging session: OmkarP.(2025)
-                        double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity(); // 0..1
-                        chargeStartSoc.put(evId, socFraction);
-                        chargeStartTime.put(evId, event.getTime());
+                        // default: immediate charging (for non-home or smart disabled)
+                        boolean smartEnabled = urbanEvCfg.isEnableSmartCharging() && isHomeChargingAct;
+
+                        // Smart ToU aware rescheduling: OmkarP.(2025)
+                        if (smartEnabled && activity != null && activity.getEndTime().isDefined()) {
+                            double arrivalTime = event.getTime();
+                            double departureTime = activity.getEndTime().seconds();
+
+                            if (departureTime > arrivalTime) {
+                                // energy missing (J - kWh)
+                                double energyRequiredJ = ev.getBattery().getCapacity() - ev.getBattery().getSoc();
+                                if (energyRequiredJ < 0.0) {
+                                    energyRequiredJ = 0.0;
+                                }
+                                double energyRequiredKWh = energyRequiredJ / 3_600_000.0;
+
+                                // approximate charging duration using default home power (kW)
+                                double powerKW = urbanEvCfg.getDefaultHomeChargerPower();
+                                double chargingDuration = (powerKW > 0.0)
+                                        ? (energyRequiredKWh / powerKW) * 3600.0
+                                        : 0.0;
+
+                                // Person-level awareness from attributes
+                                Object awareAttr = person.getAttributes().getAttribute("smartChargingAware");
+                                boolean isAware = (awareAttr instanceof Boolean) && (Boolean) awareAttr;
+
+                                double optimalStart = SmartChargingTouHelper.computeOptimalStartTime(
+                                        arrivalTime,
+                                        departureTime,
+                                        chargingDuration,
+                                        urbanEvCfg,
+                                        selectedCharger,
+                                        ev,
+                                        isAware
+                                );
+
+                                if (log.isDebugEnabled()) {
+                                    log.debug(String.format(
+                                            "SmartCharging: person=%s aware=%s homeAct=true arr=%.0f dep=%.0f dur≈%.0fs - optimalStart=%.0f",
+                                            personId, isAware, arrivalTime, departureTime, chargingDuration, optimalStart
+                                    ));
+                                }
+
+                                if (optimalStart > arrivalTime + 1.0) {
+                                    // schedule deferred plug-in
+                                    smartScheduler.schedule(evId, selectedCharger.getId(), optimalStart);
+                                    walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
+
+                                    log.info(String.format(
+                                            "Smart home charging: EV %s defers from t=%.0f to t=%.0f (window %.0f–%.0f, dur≈%.0fs)",
+                                            ev.getId(), arrivalTime, optimalStart, arrivalTime, departureTime, chargingDuration
+                                    ));
+
+                                } else {
+                                    // optimum is effectively "now" (or agent not aware) fall back to immediate charging
+                                    selectedCharger.getLogic().addVehicle(ev, arrivalTime);
+                                    vehiclesAtChargers.put(evId, selectedCharger.getId());
+                                    walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
+
+                                    double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
+                                    chargeStartSoc.put(evId, socFraction);
+                                    chargeStartTime.put(evId, arrivalTime);
+                                }
+                            } else {
+                                // weird time window, just plug immediately
+                                double t = event.getTime();
+                                selectedCharger.getLogic().addVehicle(ev, t);
+                                vehiclesAtChargers.put(evId, selectedCharger.getId());
+                                walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
+
+                                double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
+                                chargeStartSoc.put(evId, socFraction);
+                                chargeStartTime.put(evId, t);
+                            }
+                        } else {
+                            // non-home charging or smart disabled: legacy behaviour
+                            double t = event.getTime();
+                            selectedCharger.getLogic().addVehicle(ev, t);
+                            vehiclesAtChargers.put(evId, selectedCharger.getId());
+                            walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
+
+                            double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
+                            chargeStartSoc.put(evId, socFraction);
+                            chargeStartTime.put(evId, t);
+                        }
 
                     } else {
                         // if no charger was found, mark as failed attempt in plan
@@ -158,6 +274,12 @@ public class VehicleChargingHandler
             Id<Vehicle> vehicleId = lastVehicleUsed.get(event.getPersonId());
             if (vehicleId != null) {
                 Id<ElectricVehicle> evId = Id.create(vehicleId, ElectricVehicle.class);
+
+                // cancel any deferred schedule if the charging act ends
+                if (smartScheduler != null) {
+                    smartScheduler.cancelIfScheduled(evId);
+                }
+
                 ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
 
                 // compute energy charged during this session and emit cost-only scoring event: OmkarP.(2025)
