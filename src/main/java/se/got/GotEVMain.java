@@ -72,10 +72,20 @@ public class GotEVMain {
 
         final Scenario scenario = ScenarioUtils.loadScenario(config);
         Controler controler = new Controler(scenario);
+
+        // Access UrbanEV config from the same Config object used to load the scenario
+        UrbanEVConfigGroup urbanEvCfg =
+                (UrbanEVConfigGroup) controler.getConfig().getModules().get(UrbanEVConfigGroup.GROUP_NAME);
+        if (urbanEvCfg != null) {
+            urbanEvCfg.logIfSuspicious();
+        }
+
         controler.addOverridingModule(new EvModule());
         controler.addOverridingModule(new AbstractModule() {
+            @Override
             public void install() {
                 this.installQSimModule(new AbstractQSimModule() {
+                    @Override
                     protected void configureQSim() {
                         this.bind(VehicleChargingHandler.class).asEagerSingleton();
                     }
@@ -83,9 +93,7 @@ public class GotEVMain {
             }
         });
 
-        controler.configureQSimComponents((components) -> {
-            components.addNamedComponent("EV_COMPONENT");
-        });
+        controler.configureQSimComponents(components -> components.addNamedComponent("EV_COMPONENT"));
 
         controler.addOverridingModule(new AbstractModule() {
             @Override
@@ -97,7 +105,8 @@ public class GotEVMain {
         controler.setScoringFunctionFactory(new ScoringFunctionFactory() {
             @Override
             public ScoringFunction createNewScoringFunction(Person person) {
-                ChargingBehaviourScoringParameters chargingBehaviourScoringParameters = new ChargingBehaviourScoringParameters.Builder(scenario).build();
+                ChargingBehaviourScoringParameters chargingBehaviourScoringParameters =
+                        new ChargingBehaviourScoringParameters.Builder(scenario).build();
                 SumScoringFunction sumScoringFunction = new SumScoringFunction();
                 sumScoringFunction.addScoringFunction(new ChargingBehaviourScoring(chargingBehaviourScoringParameters, person));
                 return sumScoringFunction;
@@ -106,12 +115,9 @@ public class GotEVMain {
 
         Population population = controler.getScenario().getPopulation();
 
-// Access UrbanEV config from the same Config object used to load the scenario
-        UrbanEVConfigGroup urbanEvCfg =
-                (UrbanEVConfigGroup) controler.getConfig().getModules().get(UrbanEVConfigGroup.GROUP_NAME);
-        double awareness = urbanEvCfg != null ? urbanEvCfg.getAwarenessFactor() : 0.0;
+        double awareness = (urbanEvCfg != null) ? urbanEvCfg.getAwarenessFactor() : 0.0;
 
-// Stable RNG for attribute assignment (use config seed so it's reproducible)
+        // Stable RNG for attribute assignment (use config seed so it's reproducible)
         java.util.Random rng = new java.util.Random(controler.getConfig().global().getRandomSeed());
 
         int awareCount = 0;

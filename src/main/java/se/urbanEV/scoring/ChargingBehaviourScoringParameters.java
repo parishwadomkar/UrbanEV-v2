@@ -74,6 +74,9 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             homeChargingCost = configGroup.getHomeChargingCost();
             workChargingCost = configGroup.getWorkChargingCost();
             publicChargingCost = configGroup.getPublicChargingCost();
+
+            // Guard against scaling
+            if (alphaScaleCost < 0.0) { alphaScaleCost = 0.0; }
         }
 
         public ChargingBehaviourScoringParameters build() {
