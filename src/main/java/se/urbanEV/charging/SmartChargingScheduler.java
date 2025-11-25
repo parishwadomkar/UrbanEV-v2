@@ -52,8 +52,9 @@ public class SmartChargingScheduler implements MobsimScopeEventHandler, BasicEve
      * Schedule a deferred plug-in for an EV at a specific charger and time.
      */
     public void schedule(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
-        scheduled.put(evId, new ScheduledCharge(evId, chargerId, startTime));
-        log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) startTime
+        double clampedStart = Math.max(0.0, startTime);
+        scheduled.put(evId, new ScheduledCharge(evId, chargerId, clampedStart));
+        log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) clampedStart
                 + " on charger " + chargerId);
     }
 

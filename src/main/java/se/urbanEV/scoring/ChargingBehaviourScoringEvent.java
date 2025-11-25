@@ -55,7 +55,6 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
         this.costOnly = costOnly;
     }
 
-
     @Override
     public Id<Person> getPersonId() {
         return personId;
@@ -74,7 +73,6 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
         return EVENT_TYPE;
     }
 
-
     //    OmkarP.(2025)
     public Double getPricingTime() { return pricingTime;  }
     public Double getEnergyChargedKWh() {
@@ -87,24 +85,17 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
         return costOnly;
     }
 
-
     @Override
     public Map<String, String> getAttributes() {
         Map<String, String> attributes = super.getAttributes();
-        attributes.put("soc", getSoc().toString());
-        attributes.put("walkingDistance", getWalkingDistance().toString());
-        attributes.put("activityType", getActivityType());
-        attributes.put("startSoc", getStartSoc().toString());
+        if (soc != null) { attributes.put("soc", soc.toString()); }
+        if (walkingDistance != null) { attributes.put("walkingDistance", walkingDistance.toString()); }
+        if (activityType != null) { attributes.put("activityType", activityType); }
+        if (startSoc != null) { attributes.put("startSoc", startSoc.toString()); }
 
-        if (energyChargedKWh != null) {
-            attributes.put("energyChargedKWh", energyChargedKWh.toString());
-        }
-        if (chargerType != null) {
-            attributes.put("chargerType", chargerType);
-        }
-        if (pricingTime != null) {
-            attributes.put("pricingTime", pricingTime.toString());
-        }
+        if (energyChargedKWh != null) { attributes.put("energyChargedKWh", energyChargedKWh.toString()); }
+        if (chargerType != null) { attributes.put("chargerType", chargerType); }
+        if (pricingTime != null) { attributes.put("pricingTime", pricingTime.toString()); }
         attributes.put("costOnly", Boolean.toString(costOnly));
 
         return attributes;

@@ -187,7 +187,12 @@ public class VehicleChargingHandler
 
                                 // Person-level awareness from attributes
                                 Object awareAttr = person.getAttributes().getAttribute("smartChargingAware");
-                                boolean isAware = (awareAttr instanceof Boolean) && (Boolean) awareAttr;
+                                boolean isAware = false;
+                                if (awareAttr instanceof Boolean) {
+                                    isAware = (Boolean) awareAttr;
+                                } else if (awareAttr instanceof String) {
+                                    isAware = Boolean.parseBoolean((String) awareAttr);
+                                }
 
                                 double optimalStart = SmartChargingTouHelper.computeOptimalStartTime(
                                         arrivalTime,
