@@ -47,7 +47,7 @@
     </module>
 
     <module name="network">
-        <param name="inputNetworkFile" value="cleaned_network.xml"/>
+        <param name="inputNetworkFile" value="got_network.xml.gz"/>
         <param name="timeVariantNetwork" value="false" />
         <param name="inputChangeEventsFile" value="null" />
     </module>
@@ -232,3 +232,4 @@
     </module>
 
 </config>
+
