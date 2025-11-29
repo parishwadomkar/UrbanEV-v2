@@ -45,7 +45,6 @@ public class ChangeChargingBehaviourModule implements PlanStrategyModule, Chargi
     public void handlePlan(Plan plan) {
         int numberOfChanges = 1 + random.nextInt(maxNumberSimultaneousPlanChanges);
 
-
         for (int c = 0; c < numberOfChanges; c++ ) {
             List<PlanElement> planElements = plan.getPlanElements();
             int max = planElements.size();
@@ -189,22 +188,58 @@ public class ChangeChargingBehaviourModule implements PlanStrategyModule, Chargi
 
     @Override
     public void prepareReplanning(ReplanningContext replanningContext) {
-
     }
 
     @Override
     public void handleEvent(ChargingBehaviourScoringEvent event) {
-        double startSoc = event.getStartSoc();
-        double soc = event.getSoc();
-        boolean isLastAct = event.getActivityType().contains("end");
-        // Make sure agents with a criticalSOC or with a bad end-soc get replanned for sure
-        if (soc == 0 || (isLastAct && Math.abs(soc - startSoc) > random.nextDouble())) {
-            // Add all critical agents to the criticalSOC subpopulation such that they get replanned
-            population.getPersons().get(event.getPersonId()).getAttributes().putAttribute("subpopulation", "criticalSOC");
+        // 1) Ignore synthetic "cost-only" events from VehicleChargingHandler
+        //    (these are only for monetary scoring and should not drive replanning).
+        if (event.isCostOnly()) {
+            return;
         }
-        else{
-            // Remove all non-critical agents from the criticalSOC subpopulation such that they get replanned with the default probability
-            population.getPersons().get(event.getPersonId()).getAttributes().putAttribute("subpopulation", "nonCriticalSOC");
+
+        // 2) Null guards: if SOC or startSOC is missing, do not touch subpopulation.
+        Double socObj = event.getSoc();
+        Double startSocObj = event.getStartSoc();
+        String actType = event.getActivityType();
+
+        if (socObj == null || startSocObj == null || actType == null) {
+            return;
+        }
+
+        double soc = socObj;
+        double startSoc = startSocObj;
+        boolean isLastAct = actType.contains("end");
+
+        // 3) Critical if:
+        //    - battery is empty at any scoring event, OR
+        //    - at the last activity, SOC dropped far from start SOC in a "bad" way.
+        boolean isCritical;
+
+        if (soc <= 0.0) {
+            // Empty battery → always critical.
+            isCritical = true;
+        } else if (isLastAct) {
+            double deltaSoc = Math.abs(soc - startSoc);
+            // Use a probabilistic threshold as before, but keep it bounded and explicit.
+            double threshold = random.nextDouble();
+            isCritical = deltaSoc > threshold;
+        } else {
+            // Intermediate activities are not decisive for (non-)critical classification.
+            isCritical = false;
+        }
+
+        Person person = population.getPersons().get(event.getPersonId());
+        if (person == null) {
+            return;
+        }
+
+        if (isCritical) {
+            // Mark agent as "criticalSOC" → always replanned via strategy settings.
+            person.getAttributes().putAttribute("subpopulation", "criticalSOC");
+        } else {
+            // Reset to default "nonCriticalSOC" for standard replanning probability.
+            person.getAttributes().putAttribute("subpopulation", "nonCriticalSOC");
         }
     }
 
