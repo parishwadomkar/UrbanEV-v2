@@ -107,11 +107,11 @@ public class VehicleChargingHandler
         this.parkingSearchRadius = urbanEVCfg.getParkingSearchRadius();
         this.urbanEvCfg = urbanEVCfg;
 
-        // instantiate smart scheduler and register both handlers for MobsimScopeEvents: OmkarP.(2025)
+        // instantiate smart scheduler
         this.smartScheduler = new SmartChargingScheduler(chargingInfrastructure, electricFleet, this);
 
+        // only VehicleChargingHandler is a MobsimScopeEventHandler
         events.addMobsimScopeHandler(this);
-        events.addMobsimScopeHandler(this.smartScheduler);
     }
 
     /**
@@ -142,6 +142,7 @@ public class VehicleChargingHandler
 
     @Override
 	public void handleEvent(ActivityStartEvent event) {
+        smartScheduler.processDueTasks(event.getTime());
 		String actType = event.getActType();
 		Id<Person> personId = event.getPersonId();
 		Id<Vehicle> vehicleId = lastVehicleUsed.get(personId);
@@ -275,6 +276,9 @@ public class VehicleChargingHandler
 
     @Override
     public void handleEvent(ActivityEndEvent event) {
+        // process any overdue smart-charging tasks before handling this event
+        smartScheduler.processDueTasks(event.getTime());
+
         if (event.getActType().endsWith(CHARGING_IDENTIFIER)) {
             Id<Vehicle> vehicleId = lastVehicleUsed.get(event.getPersonId());
             if (vehicleId != null) {
@@ -324,7 +328,7 @@ public class VehicleChargingHandler
                                 event.getTime(),                // event time
                                 event.getPersonId(),
                                 socFrac,
-                                0.0,                            // no walking component here
+                                0.0,              // no walking component here
                                 actType,
                                 startSocForScore,
                                 pricingTime,                    // pricingTime for ToU
@@ -347,6 +351,7 @@ public class VehicleChargingHandler
 
     @Override
 	public void handleEvent(PersonLeavesVehicleEvent event) {
+        smartScheduler.processDueTasks(event.getTime());
 		lastVehicleUsed.put(event.getPersonId(), event.getVehicleId());
 	}
 
@@ -405,9 +410,7 @@ public class VehicleChargingHandler
 			if (charger.getAllowedVehicles().isEmpty() || charger.getAllowedVehicles().contains(electricVehicle.getId())) {
 				// filter out chargers that are out of range
 				if (DistanceUtils.calculateDistance(stopCoord, charger.getCoord()) < parkingSearchRadius) {
-					// filter out chargers with wrong type
 					if (electricVehicle.getChargerTypes().contains(charger.getChargerType())) {
-						// filter out occupied chargers
 						if ((charger.getLogic().getPluggedVehicles().size() < charger.getPlugCount())) {
 							filteredChargers.add(charger);
 						}
@@ -426,4 +429,16 @@ public class VehicleChargingHandler
 			return null;
 		}
 	}
+
+    @Override
+    public void reset(int iteration) {
+        lastVehicleUsed.clear();
+        vehiclesAtChargers.clear();
+        chargeStartSoc.clear();
+        chargeStartTime.clear();
+
+        if (smartScheduler != null) {
+            smartScheduler.reset();
+        }
+    }
 }

@@ -2,24 +2,26 @@ package se.urbanEV.charging;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.events.Event;
-import org.matsim.contrib.ev.MobsimScopeEventHandler;
-import org.matsim.core.events.handler.BasicEventHandler;
 import se.urbanEV.fleet.ElectricFleet;
 import se.urbanEV.fleet.ElectricVehicle;
 import se.urbanEV.infrastructure.Charger;
 import se.urbanEV.infrastructure.ChargingInfrastructure;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
  * created by omkarp, 10.01.2025
  * Scheduler for deferred smart charging.
- * It is a Mobsim-scope event handler: it receives ALL MATSim Events,
- * and on each event checks if any scheduled charging should now start.
+ *
+ * IMPORTANT:
+ * This is now a pure helper class, NOT an EventHandler.
+ * It is driven explicitly by VehicleChargingHandler, which calls processDueTasks(now)
+ * from its own event callbacks. This avoids interfering with the MATSim
+ * SimStepParallelEventsManager ordering.
  */
-public class SmartChargingScheduler implements MobsimScopeEventHandler, BasicEventHandler {
+public class SmartChargingScheduler {
 
     private static final Logger log = Logger.getLogger(SmartChargingScheduler.class);
 
@@ -70,18 +72,20 @@ public class SmartChargingScheduler implements MobsimScopeEventHandler, BasicEve
     }
 
     /**
-     * Called for every MATSim Event (because this implements EventHandler via MobsimScopeEventHandler).
-     * We use the event time as "now" and trigger any overdue scheduled charging.
+     * Called explicitly from VehicleChargingHandler whenever we have a well-defined simulation time.
+     * Any scheduled charging whose startTime <= now will be executed at 'now'.
+     *
+     * This is the critical change: we do NOT hook into the EventsManager anymore,
+     * we only act from inside an already-running event handler.
      */
-    @Override
-    public void handleEvent(Event e) {
+    public void processDueTasks(double now) {
         if (scheduled.isEmpty()) {
             return;
         }
 
-        final double now = e.getTime();
-        scheduled.entrySet().removeIf(entry -> {
-            ScheduledCharge sc = entry.getValue();
+        Iterator<Map.Entry<Id<ElectricVehicle>, ScheduledCharge>> it = scheduled.entrySet().iterator();
+        while (it.hasNext()) {
+            ScheduledCharge sc = it.next().getValue();
             if (sc.startTime <= now + 1e-3) {
                 ElectricVehicle ev = fleet.getElectricVehicles().get(sc.evId);
                 Charger charger = infra.getChargers().get(sc.chargerId);
@@ -89,7 +93,8 @@ public class SmartChargingScheduler implements MobsimScopeEventHandler, BasicEve
                 if (ev == null || charger == null) {
                     log.warn("SmartChargingScheduler: could not plug EV " + sc.evId
                             + " at t=" + (int) now + " (ev or charger missing)");
-                    return true;
+                    it.remove();
+                    continue;
                 }
 
                 charger.getLogic().addVehicle(ev, now);
@@ -98,14 +103,12 @@ public class SmartChargingScheduler implements MobsimScopeEventHandler, BasicEve
                 log.info("SmartChargingScheduler: plugging EV " + sc.evId
                         + " at charger " + sc.chargerId
                         + " at t=" + (int) now + " (scheduled t=" + (int) sc.startTime + ")");
-                return true;
+                it.remove();
             }
-            return false;
-        });
+        }
     }
 
-    @Override
-    public void reset(int iteration) {
+    public void reset() {
         scheduled.clear();
     }
 }

@@ -18,7 +18,7 @@
         <param name="emptyBatteryUtility" value="-30"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-10"/>
+        <param name="socDifferenceUtility" value="-15"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
         <param name="timeAdjustmentProbability" value="0.1"/>
         <param name="maxTimeFlexibility" value="600"/>
@@ -31,12 +31,12 @@
 
         <!-- Charger Costs (OmkarP. 2025) -->
         <param name="homeChargingCost" value="1.5"/>
-        <param name="workChargingCost" value="5.0"/>
+        <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
         <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="3.0"/>
+        <param name="alphaScaleTemporal" value="1.5"/>
         <param name="awarenessFactor" value="0.7"/>
         <param name="coincidenceFactor" value="0.3"/>
     </module>
@@ -45,6 +45,10 @@
         <param name="randomSeed" value="4711" />
         <param name="coordinateSystem" value="EPSG:3006" />
         <param name="numberOfThreads" value="8"/>
+    </module>
+
+    <module name="parallelEventHandling">
+        <param name="numberOfThreads" value="1"/>
     </module>
 
     <module name="network">
