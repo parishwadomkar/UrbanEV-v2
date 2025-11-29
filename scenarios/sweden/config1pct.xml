@@ -36,6 +36,7 @@
         <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
+        <param name="alphaScaleTemporal" value="3.0"/>
         <param name="awarenessFactor" value="0.7"/>
         <param name="coincidenceFactor" value="0.3"/>
     </module>
@@ -67,7 +68,7 @@
         <param name="outputDirectory" value="output/1pct/03_Smart_172hrs" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="60"/>
+        <param name="lastIteration" value="2"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="50"/>

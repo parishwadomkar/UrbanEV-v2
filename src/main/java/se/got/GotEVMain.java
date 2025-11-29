@@ -38,11 +38,10 @@ public class GotEVMain {
         if (args != null && args.length == 2) {
             configPath = args[0];
             initIterations = Integer.parseInt(args[1]);
-        } else if (args != null && args.length == 1){
+        } else if (args != null && args.length == 1) {
             configPath = args[0];
             initIterations = 0;
-        }
-        else{
+        } else {
             System.out.println("Config file missing. Please supply a config file path as a program argument.");
             throw new IOException("Could not start simulation. Config file missing.");
         }
@@ -65,7 +64,6 @@ public class GotEVMain {
         }
 
         loadConfigAndRun(config);
-
     }
 
     private static void loadConfigAndRun(Config config) {
@@ -81,20 +79,11 @@ public class GotEVMain {
         }
 
         controler.addOverridingModule(new EvModule());
-        controler.addOverridingModule(new AbstractModule() {
-            @Override
-            public void install() {
-                this.installQSimModule(new AbstractQSimModule() {
-                    @Override
-                    protected void configureQSim() {
-                        this.bind(VehicleChargingHandler.class).asEagerSingleton();
-                    }
-                });
-            }
-        });
+        controler.configureQSimComponents(components ->
+                components.addNamedComponent(EvModule.EV_COMPONENT)
+        );
 
-        controler.configureQSimComponents(components -> components.addNamedComponent("EV_COMPONENT"));
-
+        // Strategy for charging behaviour
         controler.addOverridingModule(new AbstractModule() {
             @Override
             public void install() {
@@ -114,7 +103,6 @@ public class GotEVMain {
         });
 
         Population population = controler.getScenario().getPopulation();
-
         double awareness = (urbanEvCfg != null) ? urbanEvCfg.getAwarenessFactor() : 0.0;
 
         // Stable RNG for attribute assignment (use config seed so it's reproducible)
