@@ -68,7 +68,7 @@
         <param name="outputDirectory" value="output/1pct/03_Smart_172hrs" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="2"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="50"/>
