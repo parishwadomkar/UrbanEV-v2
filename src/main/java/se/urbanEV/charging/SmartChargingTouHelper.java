@@ -48,8 +48,8 @@ public final class SmartChargingTouHelper {
             return arrivalTime;
         }
 
+        // Feasibility: need both a positive duration and a non-empty window
         if (chargingDuration <= 0 || departureTime <= arrivalTime + chargingDuration) {
-            // Not enough window or nothing to charge
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
                         "ToU: insufficient window or zero duration " +
@@ -60,36 +60,45 @@ public final class SmartChargingTouHelper {
             return arrivalTime;
         }
 
-        double latestStart = departureTime - chargingDuration;
+        final double latestStart = departureTime - chargingDuration;
 
         double bestStart = arrivalTime;
         double bestCost = Double.POSITIVE_INFINITY;
 
-        // We assume energyRequired is fixed across candidates → only ToU pattern matters
-        double pseudoEnergyKWh = 1.0;
+        // Energy magnitude is irrelevant here; only the relative ToU shape matters
+        final double pseudoEnergyKWh = 1.0;
+        final double alphaTemporal = cfg.getAlphaScaleTemporal(); // ≥ 1.0 by setter clamp
 
+        // Scan candidate start times in 15-min steps within the feasible window
         for (double t = arrivalTime; t <= latestStart + 1e-3; t += STEP) {
             double tou = ChargingCostUtils.getHourlyCostMultiplier(t);
-            double cost = pseudoEnergyKWh * tou;
-            if (cost < bestCost) {
+
+            // Behaviourally amplified perception of ToU:
+            //   alphaTemporal = 1.0 → perceivedTou == tou (no change)
+            //   alphaTemporal > 1.0 → exaggerates high prices and deepens low ones,
+            //                          pushing choices more strongly to cheap night hours.
+            double perceivedTou = Math.pow(tou, alphaTemporal);
+            double cost = pseudoEnergyKWh * perceivedTou;
+
+            if (cost < bestCost - 1e-9 || (Math.abs(cost - bestCost) <= 1e-9 && t > bestStart)) {
                 bestCost = cost;
                 bestStart = t;
             }
         }
 
-        // Coincidence: not all aware agents actually shift to the optimum
-        double coincidence = cfg.getCoincidenceFactor();
-        if (coincidence < 1.0) {
+        // Coincidence: interpret cfg.getCoincidenceFactor() as probability of *not* shifting-  pBlock = 0.25 → 25% ignore optimum, 75% follow it.
+        double pBlock = cfg.getCoincidenceFactor();
+        if (pBlock > 0.0) {
             double r = Math.random();
-            if (r > coincidence) {
+            if (r < pBlock) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(
-                            "ToU: aware but not shifting due to coincidence: r=%.3f > c=%.2f " +
+                            "ToU: aware but blocked by coincidence: r=%.3f < pBlock=%.2f " +
                                     "(arr=%.0f dep=%.0f dur=%.0f → bestStart=%.0f cost=%.3f → returning arrival)",
-                            r, coincidence, arrivalTime, departureTime, chargingDuration, bestStart, bestCost
+                            r, pBlock, arrivalTime, departureTime, chargingDuration, bestStart, bestCost
                     ));
                 }
-                return arrivalTime;
+                return arrivalTime;  // stay with arrivalTime despite having an optimum
             }
         }
 

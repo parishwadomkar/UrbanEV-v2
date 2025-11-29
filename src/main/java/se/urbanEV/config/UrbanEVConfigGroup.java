@@ -83,6 +83,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     static final String ALPHA_SCALE_COST_EXP = "[dimensionless] technical scaling factor applied to betaMoney in EV scoring. 1.0 = no scaling; values << 1.0 dampen the money term.";
 
     private static final String ENABLE_SMART_CHARGING = "enableSmartCharging";
+    private static final String ALPHA_SCALE_TEMPORAL = "alphaScaleTemporal";
     private static final String AWARENESS_FACTOR = "awarenessFactor";
     private static final String COINCIDENCE_FACTOR = "coincidenceFactor";
 
@@ -160,6 +161,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     @PositiveOrZero
     private double alphaScaleCost = 1.0;  // scaling factor for the costing
 
+    @PositiveOrZero
+    private double alphaScaleTemporal = 3.0;
+
     private boolean enableSmartCharging = false;
     private double awarenessFactor = 0.0;
     private double coincidenceFactor = 0.0;
@@ -199,8 +203,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(BETA_MONEY, BETA_MONEY_EXP);
         map.put(ALPHA_SCALE_COST, ALPHA_SCALE_COST_EXP);
         map.put(ENABLE_SMART_CHARGING, "Enable smart charging behavior: delayed start times, ToU awareness, and coincidence effect.");
-        map.put(COINCIDENCE_FACTOR, "Probability [0.0–1.0] of delay caused by charging congestion or 'coincidence factor'.");
+        map.put(COINCIDENCE_FACTOR, "Probability [0.0–1.0] that an aware agent ignores the cost-optimal charging start (coincidence blocking).");
         map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
+        map.put(ALPHA_SCALE_TEMPORAL, "Behavorial attitude of people to initiate overnight charging is much stronger than cost incentive.");
 
         return map;
     }
@@ -447,6 +452,16 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     @StringGetter(COINCIDENCE_FACTOR)
     public double getCoincidenceFactor() {
         return coincidenceFactor;
+    }
+
+    @StringGetter(ALPHA_SCALE_TEMPORAL)
+    public double getAlphaScaleTemporal() {
+        return alphaScaleTemporal;
+    }
+
+    @StringSetter(ALPHA_SCALE_TEMPORAL)
+    public void setAlphaScaleTemporal(double v) {
+        this.alphaScaleTemporal = Math.max(1.0, v);
     }
 
     public void logIfSuspicious() {
