@@ -1,143 +1,149 @@
-/*
-File originally created, published and licensed by contributors of the org.matsim.* project.
-Please consider the original license notice below.
-This is a modified version of the original source code!
-
-Modified 2020 by Lennart Adenaw, Technical University Munich, Chair of Automotive Technology
-email	:	lennart.adenaw@tum.de
-*/
-
-/* ORIGINAL LICENSE
- *  *********************************************************************** *
- * project: org.matsim.*
- *                                                                         *
- * *********************************************************************** *
- *                                                                         *
- * copyright       : (C) 2016 by the members listed in the COPYING,        *
- *                   LICENSE and WARRANTY file.                            *
- * email           : info at matsim dot org                                *
- *                                                                         *
- * *********************************************************************** *
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *   See also COPYING, LICENSE and WARRANTY file                           *
- *                                                                         *
- * *********************************************************************** */
-
 package se.urbanEV.stats;
 
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
+import org.matsim.contrib.ev.MobsimScopeEventHandler;
 import se.urbanEV.MobsimScopeEventHandling;
-import se.urbanEV.charging.*;
+import se.urbanEV.charging.ChargingEndEvent;
+import se.urbanEV.charging.ChargingEndEventHandler;
+import se.urbanEV.charging.ChargingStartEvent;
+import se.urbanEV.charging.ChargingStartEventHandler;
+import se.urbanEV.charging.UnpluggingEvent;
+import se.urbanEV.charging.UnpluggingEventHandler;
 import se.urbanEV.fleet.ElectricFleet;
 import se.urbanEV.fleet.ElectricVehicle;
 import se.urbanEV.infrastructure.ChargingInfrastructure;
 import se.urbanEV.scoring.ChargingBehaviourScoringEvent;
 import se.urbanEV.scoring.ChargingBehaviourScoringEventHandler;
-import org.matsim.api.core.v01.Id;
-import org.matsim.contrib.ev.MobsimScopeEventHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class ChargerPowerCollector
-		implements ChargingStartEventHandler, ChargingEndEventHandler, UnpluggingEventHandler, ChargingBehaviourScoringEventHandler, MobsimScopeEventHandler {
+        implements ChargingStartEventHandler, ChargingEndEventHandler,
+        UnpluggingEventHandler, ChargingBehaviourScoringEventHandler, MobsimScopeEventHandler {
 
-	private final ChargingInfrastructure chargingInfrastructure;
-	private final ElectricFleet fleet;
-	private HashMap<Id<ElectricVehicle>, ChargingLogEntry> activeChargingProcesses = new HashMap<>();
+    private static final Logger log = Logger.getLogger(ChargerPowerCollector.class);
 
-	private List<ChargingLogEntry> logList = new ArrayList<>();
+    private final ChargingInfrastructure chargingInfrastructure;
+    private final ElectricFleet fleet;
 
-	@Inject
-	public ChargerPowerCollector(ElectricFleet fleet, ChargingInfrastructure chargingInfrastructure,
-			MobsimScopeEventHandling events) {
-		this.fleet = fleet;
-		this.chargingInfrastructure = chargingInfrastructure;
-		events.addMobsimScopeHandler(this);
-	}
+    private final HashMap<Id<ElectricVehicle>, ChargingLogEntry> activeChargingProcesses = new HashMap<>();
+    private final List<ChargingLogEntry> logList = new ArrayList<>();
 
-	@Override
-	public void handleEvent(ChargingStartEvent event) {
-		ElectricVehicle ev = this.fleet.getElectricVehicles().get(event.getVehicleId());
+    @Inject
+    public ChargerPowerCollector(ElectricFleet fleet,
+                                 ChargingInfrastructure chargingInfrastructure,
+                                 MobsimScopeEventHandling events) {
+        this.fleet = fleet;
+        this.chargingInfrastructure = chargingInfrastructure;
+        events.addMobsimScopeHandler(this);
+    }
 
-		if (ev != null) {
-			// Todo: Maybe handle the possibility that there might be an ongoing charging process for that vehicle
-			ChargingLogEntry chargingProcess = new ChargingLogEntry(ev.getId());
-			chargingProcess.setCharger(this.chargingInfrastructure.getChargers().get(event.getChargerId()));
-			chargingProcess.setStartTime(event.getTime());
-			chargingProcess.setStartSOC(ev.getBattery().getSoc()/ev.getBattery().getCapacity());
-			chargingProcess.setStartSOC_J(ev.getBattery().getSoc());
-			this.activeChargingProcesses.put(ev.getId(), chargingProcess);
+    @Override
+    public void handleEvent(ChargingStartEvent event) {
+        ElectricVehicle ev = fleet.getElectricVehicles().get(event.getVehicleId());
+        if (ev == null) {
+            log.warn("ChargingStartEvent for unknown EV " + event.getVehicleId());
+            return;
+        }
 
-		} else
-			throw new NullPointerException(event.getVehicleId().toString() + " is not in list");
-	}
+        ChargingLogEntry chargingProcess = new ChargingLogEntry(ev.getId());
+        chargingProcess.setCharger(chargingInfrastructure.getChargers().get(event.getChargerId()));
+        chargingProcess.setStartTime(event.getTime());
+        chargingProcess.setStartSOC(ev.getBattery().getSoc() / ev.getBattery().getCapacity());
+        chargingProcess.setStartSOC_J(ev.getBattery().getSoc());
 
-	@Override
-	public void handleEvent(ChargingEndEvent event) {
-		ElectricVehicle ev = this.fleet.getElectricVehicles().get(event.getVehicleId());
-		if (ev != null) {
-			// Todo: Maybe handle the possibility that there might not be an ongoing charging process for that vehicle
-			// Todo: Maybe handle the possibility that there is an ongoing charging process for that vehicle that does
-			//  not take place at the expected charger
-			ChargingLogEntry chargingProcess = this.activeChargingProcesses.get(ev.getId());
-			chargingProcess.setEndTime(event.getTime());
-			chargingProcess.setEndSOC_J(ev.getBattery().getSoc());
-			chargingProcess.setEndSOC(ev.getBattery().getSoc()/ev.getBattery().getCapacity());
-			chargingProcess.setChargingDuration(event.getCharging_duration());
-			chargingProcess.setTransmittedEnergy_J(chargingProcess.getEndSOC_J()-chargingProcess.getStartSOC_J());
-		} else
-			throw new NullPointerException(event.getVehicleId().toString() + " is not in list");
+        activeChargingProcesses.put(ev.getId(), chargingProcess);
+    }
 
-	}
+    @Override
+    public void handleEvent(ChargingEndEvent event) {
+        ElectricVehicle ev = fleet.getElectricVehicles().get(event.getVehicleId());
+        if (ev == null) {
+            log.warn("ChargingEndEvent for unknown EV " + event.getVehicleId());
+            return;
+        }
 
-	@Override
-	public void handleEvent(UnpluggingEvent event) {
+        ChargingLogEntry chargingProcess = activeChargingProcesses.get(ev.getId());
+        if (chargingProcess == null) {
+            log.warn("ChargingEndEvent for EV " + ev.getId()
+                    + " without activeChargingProcess; ignoring.");
+            return;
+        }
 
-		ElectricVehicle ev = this.fleet.getElectricVehicles().get(event.getVehicleId());
+        chargingProcess.setEndTime(event.getTime());
+        chargingProcess.setEndSOC_J(ev.getBattery().getSoc());
+        chargingProcess.setEndSOC(ev.getBattery().getSoc() / ev.getBattery().getCapacity());
+        chargingProcess.setChargingDuration(event.getCharging_duration());
+        chargingProcess.setTransmittedEnergy_J(
+                chargingProcess.getEndSOC_J() - chargingProcess.getStartSOC_J()
+        );
+    }
 
-		if (ev != null) {
-			if (activeChargingProcesses.containsKey(ev.getId())){
-				ChargingLogEntry chargingProcess = this.activeChargingProcesses.remove(ev.getId());
-				chargingProcess.setUnplugTime(event.getTime());
-				chargingProcess.setPluggedDuration(chargingProcess.getUnplugTime()-chargingProcess.getStartTime());
-				chargingProcess.setChargingRatio(chargingProcess.getChargingDuration()/chargingProcess.getPluggedDuration());
+    @Override
+    public void handleEvent(UnpluggingEvent event) {
+        ElectricVehicle ev = fleet.getElectricVehicles().get(event.getVehicleId());
+        if (ev == null) {
+            log.warn("UnpluggingEvent for unknown EV " + event.getVehicleId());
+            return;
+        }
 
-				if(chargingProcess.complete()&&chargingProcess.valid()){
-					logList.add(chargingProcess);
-				} else
-					throw new RuntimeException("Failed to add invalid or incomplete ChargingLogEntry to logList!");
-			} else
-				throw new RuntimeException(event.getVehicleId().toString() + " has no ongoing charging process at charger " + event.getChargerId().toString());
+        ChargingLogEntry chargingProcess = activeChargingProcesses.remove(ev.getId());
+        if (chargingProcess == null) {
+            log.warn("UnpluggingEvent for EV " + ev.getId()
+                    + " but no activeChargingProcess; ignoring.");
+            return;
+        }
 
+        chargingProcess.setUnplugTime(event.getTime());
 
-		} else
-			throw new NullPointerException(event.getVehicleId().toString() + " is not in list");
-	}
+        double startTime = chargingProcess.getStartTime();
+        double unplugTime = chargingProcess.getUnplugTime();
+        double pluggedDuration = unplugTime - startTime;
 
-	@Override
-	public void handleEvent(ChargingBehaviourScoringEvent event) {
-		// Todo: Maybe handle the possibility that there might not be an ongoing charging process for that vehicle
-		// Todo: Maybe handle the possibility that there is an ongoing charging process for that vehicle that does
-		//  not take place at the expected charger
-		ElectricVehicle ev = this.fleet.getElectricVehicles().get(Id.create(event.getPersonId(), ElectricVehicle.class));
+        if (pluggedDuration <= 0.0) {
+            log.warn("Non-positive pluggedDuration for EV " + ev.getId()
+                    + " (start=" + startTime + ", unplug=" + unplugTime + "); dropping entry.");
+            return;
+        }
 
-		if (ev != null) {
-			if(this.activeChargingProcesses.containsKey(ev.getId())) {
-				ChargingLogEntry chargingProcess = this.activeChargingProcesses.get(ev.getId());
-				chargingProcess.setWalkingDistance(event.getWalkingDistance());
-			}
-		} else
-			throw new NullPointerException(ev.getId().toString() + " is not in list");
+        chargingProcess.setPluggedDuration(pluggedDuration);
+        double chargingDuration = chargingProcess.getChargingDuration();
+        double ratio;
+        if (chargingDuration <= 0.0 || chargingDuration > pluggedDuration) {
+            ratio = 0.0;
+        } else {
+            ratio = chargingDuration / pluggedDuration;
+        }
+        chargingProcess.setChargingRatio(ratio);
 
-	}
+        if (chargingProcess.complete() && chargingProcess.valid()) {
+            logList.add(chargingProcess);
+        } else {
+            log.warn("Dropping invalid or incomplete ChargingLogEntry for EV " + ev.getId());
+        }
+    }
 
-	public List<ChargingLogEntry> getLogList() {
-		return logList;
-	}
+    @Override
+    public void handleEvent(ChargingBehaviourScoringEvent event) {
+        Id<ElectricVehicle> evId = Id.create(event.getPersonId(), ElectricVehicle.class);
+        ElectricVehicle ev = fleet.getElectricVehicles().get(evId);
+
+        if (ev == null) {
+            // This can happen for purely scoring-related events; ignore safely.
+            return;
+        }
+
+        ChargingLogEntry chargingProcess = activeChargingProcesses.get(ev.getId());
+        if (chargingProcess != null) {
+            chargingProcess.setWalkingDistance(event.getWalkingDistance());
+        }
+    }
+
+    public List<ChargingLogEntry> getLogList() {
+        return logList;
+    }
 }
