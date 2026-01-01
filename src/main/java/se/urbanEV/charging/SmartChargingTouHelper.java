@@ -37,7 +37,12 @@ public final class SmartChargingTouHelper {
             ElectricVehicle ev,
             boolean isAware) {
 
-        // Global toggle + per-person awareness:
+        // Any non-home charger uses immediate charging.
+        if (!"home".equalsIgnoreCase(charger.getChargerType())) {
+            return arrivalTime;
+        }
+
+        // Global toggle + per-person awareness
         if (!cfg.isEnableSmartCharging() || !isAware) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
@@ -48,7 +53,7 @@ public final class SmartChargingTouHelper {
             return arrivalTime;
         }
 
-        // Feasibility: need both a positive duration and a non-empty window
+        // Feasibility need both a positive duration and a non-empty window
         if (chargingDuration <= 0 || departureTime <= arrivalTime + chargingDuration) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(
@@ -64,25 +69,27 @@ public final class SmartChargingTouHelper {
 
         double bestStart = arrivalTime;
         double bestCost = Double.POSITIVE_INFINITY;
+        int nBest = 0;
 
-        // Energy magnitude is irrelevant here; only the relative ToU shape matters
+        // Energy magnitude is irrelevant here.. only the relative ToU shape matters
         final double pseudoEnergyKWh = 1.0;
         final double alphaTemporal = cfg.getAlphaScaleTemporal(); // ≥ 1.0 by setter clamp
 
         // Scan candidate start times in 15-min steps within the feasible window
         for (double t = arrivalTime; t <= latestStart + 1e-3; t += STEP) {
             double tou = ChargingCostUtils.getHourlyCostMultiplier(t);
-
-            // Behaviourally amplified perception of ToU:
-            //   alphaTemporal = 1.0 → perceivedTou == tou (no change)
-            //   alphaTemporal > 1.0 → exaggerates high prices and deepens low ones,
-            //                          pushing choices more strongly to cheap night hours.
             double perceivedTou = Math.pow(tou, alphaTemporal);
             double cost = pseudoEnergyKWh * perceivedTou;
 
-            if (cost < bestCost - 1e-9 || (Math.abs(cost - bestCost) <= 1e-9 && t > bestStart)) {
+            if (cost + 1e-9 < bestCost) {
                 bestCost = cost;
                 bestStart = t;
+                nBest = 1;
+            } else if (Math.abs(cost - bestCost) <= 1e-9) {
+                nBest++;
+                if (Math.random() < 1.0 / nBest) {
+                    bestStart = t;
+                }
             }
         }
 
