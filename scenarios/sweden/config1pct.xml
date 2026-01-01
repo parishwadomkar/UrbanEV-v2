@@ -30,13 +30,13 @@
         <param name="defaultWorkChargerPower" value="11"/>
 
         <!-- Charger Costs (OmkarP. 2025) -->
-        <param name="homeChargingCost" value="1.5"/>
+        <param name="homeChargingCost" value="2.5"/>
         <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
         <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="1.5"/>
+        <param name="alphaScaleTemporal" value="1.2"/>
         <param name="awarenessFactor" value="0.7"/>
         <param name="coincidenceFactor" value="0.3"/>
     </module>
@@ -205,6 +205,56 @@
                 <param name="scoringThisActivityAtAll" value="false"/>
                 <param name="typicalDuration" value="00:00:01"/>
                 <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+
+            <!-- EV charging activity types created by UrbanEV -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="home charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="work charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="school charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="other charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <!-- Failed charging attempts -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="home charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="work charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="school charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="other charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
             </parameterset>
         </parameterset>
     </module>
