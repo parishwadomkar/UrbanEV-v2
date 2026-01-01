@@ -37,11 +37,6 @@ public final class SmartChargingTouHelper {
             ElectricVehicle ev,
             boolean isAware) {
 
-        // Any non-home charger uses immediate charging.
-        if (!"home".equalsIgnoreCase(charger.getChargerType())) {
-            return arrivalTime;
-        }
-
         // Global toggle + per-person awareness
         if (!cfg.isEnableSmartCharging() || !isAware) {
             if (log.isDebugEnabled()) {
