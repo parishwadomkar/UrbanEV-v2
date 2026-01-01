@@ -285,6 +285,4 @@
             <param name= "subpopulation" value= "criticalSOC"/>
         </parameterset>
     </module>
-
-
 </config>

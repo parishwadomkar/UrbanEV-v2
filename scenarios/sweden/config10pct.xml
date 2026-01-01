@@ -15,10 +15,10 @@
         <param name="defaultRangeAnxietyThreshold" value="0.2"/>
         <param name="vehicleTypesFile" value="vehicletypes.xml"/>
         <param name="rangeAnxietyUtility" value="-10"/>
-        <param name="emptyBatteryUtility" value="-20"/>
+        <param name="emptyBatteryUtility" value="-30"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-10"/>
+        <param name="socDifferenceUtility" value="-15"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
         <param name="timeAdjustmentProbability" value="0.1"/>
         <param name="maxTimeFlexibility" value="600"/>
@@ -30,12 +30,13 @@
         <param name="defaultWorkChargerPower" value="11"/>
 
         <!-- Charger Costs (OmkarP. 2025) -->
-        <param name="homeChargingCost" value="1.5"/>
-        <param name="workChargingCost" value="5.0"/>
+        <param name="homeChargingCost" value="2.5"/>
+        <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
-        <param name="betaMoney" value="-0.05"/>            <!-- VoT ~60 SEK/hr; Remove Cost - 0.0 -->
+        <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
+        <param name="alphaScaleTemporal" value="1.2"/>
         <param name="awarenessFactor" value="0.7"/>
         <param name="coincidenceFactor" value="0.3"/>
     </module>
@@ -57,7 +58,7 @@
     </module>
 
     <module name="transit">
-        <param name="useTransit" value="true" />
+        <param name="useTransit" value="false" />
         <param name="transitScheduleFile" value="transitSchedule.xml.gz" />
         <param name="vehiclesFile" value="outputVehiclesFile.xml" />
         <param name="transitModes" value="pt" />
@@ -67,7 +68,7 @@
         <param name="outputDirectory" value="output/10pct/03_Smart_172hrs" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="20"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="50"/>
@@ -201,6 +202,56 @@
                 <param name="typicalDuration" value="00:00:01"/>
                 <param name="typicalDurationScoreComputation" value="relative"/>
             </parameterset>
+
+            <!-- EV charging activity types created by UrbanEV -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="home charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="work charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="school charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="other charging"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <!-- Failed charging attempts -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="home charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="work charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="school charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
+
+            <parameterset type="activityParams">
+                <param name="activityType" value="other charging failed"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+            </parameterset>
         </parameterset>
     </module>
 
@@ -230,6 +281,4 @@
             <param name= "subpopulation" value= "criticalSOC"/>
         </parameterset>
     </module>
-
 </config>
-
