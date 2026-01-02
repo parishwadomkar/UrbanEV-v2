@@ -105,7 +105,7 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
     <param name="publicChargingCost" value="5.5"/>
 
     <!-- Converts cost into utility (negative betaMoney penalizes cost) -->
-    <!-- VoT ~100 SEK/hr; set 0.0 to remove cost from scoring -->
+    <!-- VoT ~60 SEK/hr; set 0.0 to remove cost from scoring -->
     <param name="betaMoney" value="-0.05"/>
 
     <!-- Optional scaling knobs for calibration stability -->
