@@ -3,7 +3,6 @@
 UrbanEV-v2 is a research oriented extension of the UrbanEV framework that enables **spatiotemporal EV charging-demand estimation** with **explicit charging cost scoring** and **ToU aware (adaptive) charging time rescheduling** in a MATSim-based simulation workflow.
 
 
-
 ---
 
 ## What this repository adds (vs. UrbanEV)
@@ -34,21 +33,6 @@ These additions are designed to be **config-driven** and avoid heavy restructuri
 
 ---
 
-## Repository layout (provided data for Gothenburg, Sweden)
-
-- `src/` — Java sources (UrbanEV-v2 modules, scoring extensions, smart charging helpers)
-- `scenarios/` — Scenarios (input data and outputs)
-  - Each scenario typically includes:
-    - MATSim config (`config.xml`)
-    - network (`network.xml(.gz)`)
-    - population (`plans.xml(.gz)`)
-    - chargers (`chargers.xml`)
-    - electric vehicles (`electric_vehicles.xml`)
-    - vehicle types (UrbanEV-style `vehicletypes.xml`)
-
-
----
-
 ## Inputs
 
 ### 1) Population plans (MATSim population v6)
@@ -67,6 +51,20 @@ Vehicle types include consumption and max charging rate (as used by UrbanEV).
 ### 4) Chargers (chargers_v1.dtd)
 Public chargers are defined on links with plug power and plug count.
 
+
+---
+
+## Repository layout (provided data for Gothenburg, Sweden)
+
+- `src/` — Java sources (UrbanEV-v2 modules, scoring extensions, smart charging helpers)
+- `scenarios/` — Scenarios (input data and outputs)
+  - Each scenario typically includes:
+    - MATSim config (`config.xml`)
+    - network (`network.xml(.gz)`)
+    - population (`plans.xml(.gz)`)
+    - chargers (`chargers.xml`)
+    - electric vehicles (`electric_vehicles.xml`)
+    - vehicle types (UrbanEV-style `vehicletypes.xml`)
 
 ---
 
@@ -121,6 +119,28 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 </module>
 ```
 
+### Parameter interpretation
+
+- `homeChargingCost` / `workChargingCost` / `publicChargingCost`: base tariffs by charging context (e.g., SEK/kWh) used to compute monetary charging expenditures.
+- `betaMoney`: converts monetary cost into MATSim utility (negative values penalize cost); calibrate carefully to avoid overwhelming time/activity utilities.
+- `alphaScaleCost`: additional scaling knob for cost disutility to maintain scoring stability during calibration and scenario sweeps.
+- `enableSmartCharging`: enables ToU-aware temporal shifting of charging start times within feasible parking windows (Scenario 3).
+- `alphaScaleTemporal`: scaling factor used in the temporal optimization objective (kept separate from realized cost scoring).
+- `awarenessFactor`: share/probability of agents behaving as ToU-aware (bounded rationality / partial adoption).
+- `coincidenceFactor`: probability of “charging immediately anyway” (or not perfectly optimizing) even when ToU-aware, to prevent unrealistic synchronization at tariff minima.
+
+---
+## Outputs
+
+UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, events) and EV-relevant artifacts depending on configuration (e.g., EV time profiles). Typical post-processing focuses on:
+
+- Charging demand time series (kW / kWh over time)
+- Spatial charging demand (by charger / link / zone)
+- Charging context split (home vs. work vs. public)
+- Cost outcomes (total cost, cost per charge, distributional summaries)
+- Behavioral effects of ToU (load shifting metrics, peak reduction)
+
+
 ---
 ## Requirements
 
@@ -143,27 +163,7 @@ java -Xms16g -Xmx16g -jar target/*jar-with-dependencies.jar scenarios/gothenburg
 ```
 To produce an executable “jar-with-dependencies” in `target/`
 
----
-## Parameter interpretation (high-level)
 
-- `homeChargingCost` / `workChargingCost` / `publicChargingCost`: base tariffs by charging context (e.g., SEK/kWh) used to compute monetary charging expenditures.
-- `betaMoney`: converts monetary cost into MATSim utility (negative values penalize cost); calibrate carefully to avoid overwhelming time/activity utilities.
-- `alphaScaleCost`: additional scaling knob for cost disutility to maintain scoring stability during calibration and scenario sweeps.
-- `enableSmartCharging`: enables ToU-aware temporal shifting of charging start times within feasible parking windows (Scenario 3).
-- `alphaScaleTemporal`: scaling factor used in the temporal optimization objective (kept separate from realized cost scoring).
-- `awarenessFactor`: share/probability of agents behaving as ToU-aware (bounded rationality / partial adoption).
-- `coincidenceFactor`: probability of “charging immediately anyway” (or not perfectly optimizing) even when ToU-aware, to prevent unrealistic synchronization at tariff minima.
-
----
-## Outputs
-
-UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, events) and EV-relevant artifacts depending on configuration (e.g., EV time profiles). Typical post-processing focuses on:
-
-- Charging demand time series (kW / kWh over time)
-- Spatial charging demand (by charger / link / zone)
-- Charging context split (home vs. work vs. public)
-- Cost outcomes (total cost, cost per charge, distributional summaries)
-- Behavioral effects of ToU (load shifting metrics, peak reduction)
 
 ---
 ## License
