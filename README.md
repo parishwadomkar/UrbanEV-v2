@@ -23,7 +23,7 @@ These additions are designed to be **config-driven** and avoid heavy restructuri
 ## Key features
 
 - Multi-day simulations (plans can extend beyond 24h; 7+ days / 170+ hours).
-- Public charger infrastructure from `chargers.xml` (link-based chargers).
+- Public charger infrastructure from `chargers.xml`.
 - Home/work charging availability via **person attributes** (per-agent access & power).
 - Battery SoC evolution and charging feasibility constraints.
 - Charging-choice behavior with range-anxiety and convenience considerations (UrbanEV baseline).
@@ -49,7 +49,7 @@ Electric vehicles are provided via UrbanEV’s EV XML (battery capacity, initial
 Vehicle types include consumption and max charging rate (as used by UrbanEV).
 
 ### 4) Chargers (chargers_v1.dtd)
-Public chargers are defined on links with plug power and plug count.
+Public chargers are defined at coordinates with plug power and plug count.
 
 
 ---
