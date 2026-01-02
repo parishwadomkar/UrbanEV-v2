@@ -183,13 +183,6 @@ For MATSim-core or MATSim-EV specifics, consult MATSim community channels and do
 
 
 ---
-
-## Authors (UrbanEV-v2)
-
-Parishwad Omkar, Gao Kun
-
-
----
 ## Associated Article
 
 This repository implements the methods described in:
