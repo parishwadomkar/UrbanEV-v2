@@ -22,25 +22,11 @@ import java.util.Map;
  * SimStepParallelEventsManager ordering.
  */
 public class SmartChargingScheduler {
-
     private static final Logger log = Logger.getLogger(SmartChargingScheduler.class);
-
-    private static class ScheduledCharge {
-        final Id<ElectricVehicle> evId;
-        final Id<Charger> chargerId;
-        final double startTime;
-        ScheduledCharge(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
-            this.evId = evId;
-            this.chargerId = chargerId;
-            this.startTime = startTime;
-        }
-    }
-
-    private final Map<Id<ElectricVehicle>, ScheduledCharge> scheduled = new HashMap<>();
-
     private final ChargingInfrastructure infra;
     private final ElectricFleet fleet;
     private final VehicleChargingHandler chargingHandler;
+    private final Map<Id<ElectricVehicle>, ScheduledCharge> scheduled = new HashMap<>();
 
     public SmartChargingScheduler(ChargingInfrastructure infra,
                                   ElectricFleet fleet,
@@ -53,22 +39,17 @@ public class SmartChargingScheduler {
     /**
      * Schedule a deferred plug-in for an EV at a specific charger and time.
      */
-    public void schedule(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
+    public synchronized void schedule(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
         double clampedStart = Math.max(0.0, startTime);
         scheduled.put(evId, new ScheduledCharge(evId, chargerId, clampedStart));
-        log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) clampedStart
-                + " on charger " + chargerId);
+        log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) clampedStart + " on charger " + chargerId);
     }
 
     /**
      * Cancel a scheduled plug-in (e.g. when the charging activity ends before it happens).
      */
-    public void cancelIfScheduled(Id<ElectricVehicle> evId) {
-        if (scheduled.remove(evId) != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("SmartChargingScheduler: cancelled schedule for EV " + evId);
-            }
-        }
+    public synchronized void cancelIfScheduled(Id<ElectricVehicle> evId) {
+        scheduled.remove(evId);
     }
 
     /**
@@ -78,22 +59,22 @@ public class SmartChargingScheduler {
      * This is the critical change: we do NOT hook into the EventsManager anymore,
      * we only act from inside an already-running event handler.
      */
-    public void processDueTasks(double now) {
-        if (scheduled.isEmpty()) {
-            return;
-        }
+    public synchronized void processDueTasks(double now) {
+        if (scheduled.isEmpty()) return;
 
         Iterator<Map.Entry<Id<ElectricVehicle>, ScheduledCharge>> it = scheduled.entrySet().iterator();
         while (it.hasNext()) {
-            ScheduledCharge sc = it.next().getValue();
+            Map.Entry<Id<ElectricVehicle>, ScheduledCharge> e = it.next();
+            ScheduledCharge sc = e.getValue();
+
             if (sc.startTime <= now + 1e-3) {
+                // remove first to prevent double-execution under re-entrance
+                it.remove();
+
                 ElectricVehicle ev = fleet.getElectricVehicles().get(sc.evId);
                 Charger charger = infra.getChargers().get(sc.chargerId);
-
                 if (ev == null || charger == null) {
-                    log.warn("SmartChargingScheduler: could not plug EV " + sc.evId
-                            + " at t=" + (int) now + " (ev or charger missing)");
-                    it.remove();
+                    log.warn("SmartChargingScheduler: could not plug EV " + sc.evId + " at t=" + (int) now + " (ev or charger missing)");
                     continue;
                 }
 
@@ -103,12 +84,22 @@ public class SmartChargingScheduler {
                 log.info("SmartChargingScheduler: plugging EV " + sc.evId
                         + " at charger " + sc.chargerId
                         + " at t=" + (int) now + " (scheduled t=" + (int) sc.startTime + ")");
-                it.remove();
             }
         }
     }
 
-    public void reset() {
+    public synchronized void reset() {
         scheduled.clear();
+    }
+
+    private static class ScheduledCharge {
+        final Id<ElectricVehicle> evId;
+        final Id<Charger> chargerId;
+        final double startTime;
+        ScheduledCharge(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
+            this.evId = evId;
+            this.chargerId = chargerId;
+            this.startTime = startTime;
+        }
     }
 }

@@ -42,7 +42,6 @@ se\urbanEV\infrastructure\ChargingInfrastructureModule$1$1.class
 se\urbanEV\stats\ChargerOccupancyPlanWriter.class
 se\urbanEV\charging\SmartChargingScheduler.class
 se\urbanEV\scoring\ChargingBehaviourScoringParameters$Builder.class
-se\got\GotEVMain$1$1.class
 se\urbanEV\discharging\AuxDischargingHandler$VehicleProvider.class
 se\urbanEV\scoring\ChargingBehaviourScoring.class
 se\got\GotEVMain.class
@@ -70,6 +69,7 @@ se\got\GotEVMain$2.class
 se\urbanEV\fleet\Battery.class
 se\urbanEV\discharging\OhdeSlaskiAuxEnergyConsumption.class
 se\urbanEV\infrastructure\ImmutableChargerSpecification$Builder.class
+se\urbanEV\charging\SmartChargingEngine.class
 se\urbanEV\scoring\ChargingBehaviourScoringParameters.class
 se\urbanEV\charging\ChargingEstimations.class
 se\urbanEV\charging\ChargingStartEvent.class

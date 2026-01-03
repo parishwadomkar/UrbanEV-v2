@@ -23,6 +23,7 @@ import java.io.IOException;
 
 public class GotEVMain {
     private static final Logger log = Logger.getLogger(se.got.GotEVMain.class);
+    private static final String SMART_CHARGING_COMPONENT = "SmartChargingEngine";
 
     public GotEVMain() {
     }
@@ -74,20 +75,22 @@ public class GotEVMain {
         }
 
         controler.addOverridingModule(new EvModule());
-        controler.configureQSimComponents(components ->
-                components.addNamedComponent(EvModule.EV_COMPONENT)
-        );
+        controler.configureQSimComponents(components -> {
+            components.addNamedComponent(EvModule.EV_COMPONENT);
 
-        // QSim binding for the VehicleChargingHandler
-        controler.addOverridingModule(new AbstractModule() {
+            // activate SmartChargingEngine when enabled in urban_ev
+            if (urbanEvCfg != null && urbanEvCfg.isEnableSmartCharging()) {
+                components.addNamedComponent(SMART_CHARGING_COMPONENT);
+            }
+        });
+
+        controler.addOverridingQSimModule(new org.matsim.core.mobsim.qsim.AbstractQSimModule() {
             @Override
-            public void install() {
-                installQSimModule(new org.matsim.core.mobsim.qsim.AbstractQSimModule() {
-                    @Override
-                    protected void configureQSim() {
-                        bind(se.urbanEV.charging.VehicleChargingHandler.class).asEagerSingleton();
-                    }
-                });
+            protected void configureQSim() {
+                bind(se.urbanEV.charging.VehicleChargingHandler.class).asEagerSingleton();
+                bind(se.urbanEV.charging.SmartChargingEngine.class).asEagerSingleton();
+                addQSimComponentBinding(SMART_CHARGING_COMPONENT)
+                        .to(se.urbanEV.charging.SmartChargingEngine.class);
             }
         });
 
