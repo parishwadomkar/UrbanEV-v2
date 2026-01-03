@@ -121,11 +121,11 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 
 ### Parameter interpretation
 
-- `homeChargingCost` / `workChargingCost` / `publicChargingCost`: base tariffs by charging context (e.g., SEK/kWh) used to compute monetary charging expenditures.
-- `betaMoney`: converts monetary cost into MATSim utility (negative values penalize cost); calibrate carefully to avoid overwhelming time/activity utilities.
-- `alphaScaleCost`: additional scaling knob for cost disutility to maintain scoring stability during calibration and scenario sweeps.
-- `enableSmartCharging`: enables ToU-aware temporal shifting of charging start times within feasible parking windows (Scenario 3).
-- `alphaScaleTemporal`: scaling factor used in the temporal optimization objective (kept separate from realized cost scoring).
+- `homeChargingCost` / `workChargingCost` / `publicChargingCost`: base electricity tariffs (SEK/kWh) by charging context used to compute monetary charging expenditures.
+- `betaMoney`: marginal utility of money used to translate charging expenditures into (dis)utility (negative values penalize cost). Calibrate considering Value of Time (VoT) to avoid overwhelming time/activity utilities.
+- `alphaScaleCost`: additional multiplicative calibration factor applied to the monetary disutility term (scale the cost penalty to consider minor external factors outside VoT).
+- `enableSmartCharging`: activates the ToU-aware rescheduling logic for charging start times within feasible parking windows (Scenario 3). Here applied specifically for home charging.
+- `alphaScaleTemporal`: ToU-sensitivity parameter used only inside the rescheduling objective shaping how strongly earlier multiplier hours are preferred (kept separate from realized cost scoring).
 - `awarenessFactor`: share/probability of agents behaving as ToU-aware (bounded rationality / partial adoption).
 - `coincidenceFactor`: probability of “charging immediately anyway” (or not perfectly optimizing) even when ToU-aware, to prevent unrealistic synchronization at tariff minima.
 
