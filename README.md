@@ -144,7 +144,7 @@ UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, even
 ---
 ## Requirements
 
-- **Java (JDK 21 recommended for MATSim 12.x toolchains)**  
+- **Java (MATSim 12.x toolchains)**  
 - **Maven** (to build the executable jar)
 
 You will need enough RAM for your scenario scale (1% is typically fine on a workstation; larger samples require more).
