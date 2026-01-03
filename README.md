@@ -132,7 +132,7 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 ---
 ## Outputs
 
-UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, events) and EV-relevant artifacts depending on configuration (e.g., EV time profiles). Typical post-processing focuses on:
+UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, events) and EV-relevant artifacts depending on configuration (EV time profiles). Typical post-processing focuses on:
 
 - Charging demand time series (kW / kWh over time)
 - Spatial charging demand (by charger / link / zone)
