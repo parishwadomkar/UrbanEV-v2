@@ -142,7 +142,6 @@ public class VehicleChargingHandler
 
     @Override
 	public void handleEvent(ActivityStartEvent event) {
-        smartScheduler.processDueTasks(event.getTime());
 		String actType = event.getActType();
 		Id<Person> personId = event.getPersonId();
 		Id<Vehicle> vehicleId = lastVehicleUsed.get(personId);
@@ -276,9 +275,6 @@ public class VehicleChargingHandler
 
     @Override
     public void handleEvent(ActivityEndEvent event) {
-        // process any overdue smart-charging tasks before handling this event
-        smartScheduler.processDueTasks(event.getTime());
-
         if (event.getActType().endsWith(CHARGING_IDENTIFIER)) {
             Id<Vehicle> vehicleId = lastVehicleUsed.get(event.getPersonId());
             if (vehicleId != null) {
@@ -351,7 +347,6 @@ public class VehicleChargingHandler
 
     @Override
 	public void handleEvent(PersonLeavesVehicleEvent event) {
-        smartScheduler.processDueTasks(event.getTime());
 		lastVehicleUsed.put(event.getPersonId(), event.getVehicleId());
 	}
 
@@ -429,6 +424,12 @@ public class VehicleChargingHandler
 			return null;
 		}
 	}
+
+    public void tick(double now) {
+        if (smartScheduler != null) {
+            smartScheduler.processDueTasks(now);
+        }
+    }
 
     @Override
     public void reset(int iteration) {

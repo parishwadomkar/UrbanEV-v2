@@ -72,9 +72,14 @@ public final class SmartChargingTouHelper {
 
         // Scan candidate start times in 15-min steps within the feasible window
         for (double t = arrivalTime; t <= latestStart + 1e-3; t += STEP) {
-            double tou = ChargingCostUtils.getHourlyCostMultiplier(t);
-            double perceivedTou = Math.pow(tou, alphaTemporal);
-            double cost = pseudoEnergyKWh * perceivedTou;
+            double cost = 0.0;
+            double end = t + chargingDuration;
+
+            for (double tt = t; tt < end - 1e-3; tt += STEP) {
+                double m = ChargingCostUtils.getHourlyCostMultiplier(tt);
+                double dt = Math.min(STEP, end - tt);
+                cost += Math.pow(m, alphaTemporal) * dt;
+            }
 
             if (cost + 1e-9 < bestCost) {
                 bestCost = cost;
