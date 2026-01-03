@@ -160,6 +160,7 @@ git clone https://github.com/parishwadomkar/UrbanEV-v2.git
 cd UrbanEV-v2
 mvn clean install
 java -Xms16g -Xmx16g -jar target/*jar-with-dependencies.jar scenarios/gothenburg/1pct/config.xml
+
 ```
 To produce an executable “jar-with-dependencies” in `target/`
 
@@ -169,6 +170,7 @@ To produce an executable “jar-with-dependencies” in `target/`
 ## License
 
 GPL-3.0 (consistent with UrbanEV / MATSim licensing constraints). See `LICENSE`.
+The project is built upon contributions by the MATSim community which are themselves licensed under the GPL License. Classes that were directly adapted from such projects contain author details, modification notices and the original license texts. 
 
 ---
 ## Contact / support
@@ -183,7 +185,7 @@ For MATSim-core or MATSim-EV specifics, consult MATSim community channels and do
 
 
 ---
-## Associated Article
+## Associated Articles
 
 This repository implements the methods described in:
 
