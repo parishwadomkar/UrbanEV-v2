@@ -4,11 +4,14 @@ import org.apache.log4j.Logger;
 import se.urbanEV.config.UrbanEVConfigGroup;
 import se.urbanEV.fleet.ElectricVehicle;
 import se.urbanEV.infrastructure.Charger;
+import org.matsim.core.gbl.MatsimRandom;
 
 public final class SmartChargingTouHelper {
 
     private static final Logger log = Logger.getLogger(SmartChargingTouHelper.class);
     private static final double STEP = 15.0 * 60.0; // 15 min
+    private static final double MAX_SHIFT_SEC = 5.0 * 3600.0; // max earlier shift
+    private static final double MAX_SIGMA_SEC = 2.0 * 3600.0; // max dispersion (std-dev) for deferred starts
 
     private SmartChargingTouHelper() {
         // utility class created by OmkarP.(2025)
@@ -28,6 +31,7 @@ public final class SmartChargingTouHelper {
      * Coincidence is still modelled here: even aware agents may ignore the optimum with
      * probability (1 - coincidenceFactor).
      */
+
     public static double computeOptimalStartTime(
             double arrivalTime,
             double departureTime,
@@ -64,11 +68,8 @@ public final class SmartChargingTouHelper {
 
         double bestStart = arrivalTime;
         double bestCost = Double.POSITIVE_INFINITY;
-        int nBest = 0;
-
-        // Energy magnitude is irrelevant here.. only the relative ToU shape matters
-        final double pseudoEnergyKWh = 1.0;
-        final double alphaTemporal = cfg.getAlphaScaleTemporal(); // ≥ 1.0 by setter clamp
+        final double alphaTemporal = cfg.getAlphaScaleTemporal();
+        final double shiftSec = (1.0 - alphaTemporal) * MAX_SHIFT_SEC;
 
         // Scan candidate start times in 15-min steps within the feasible window
         for (double t = arrivalTime; t <= latestStart + 1e-3; t += STEP) {
@@ -76,36 +77,30 @@ public final class SmartChargingTouHelper {
             double end = t + chargingDuration;
 
             for (double tt = t; tt < end - 1e-3; tt += STEP) {
-                double m = ChargingCostUtils.getHourlyCostMultiplier(tt);
+                double m = ChargingCostUtils.getHourlyCostMultiplier(tt + shiftSec);
                 double dt = Math.min(STEP, end - tt);
-                cost += Math.pow(m, alphaTemporal) * dt;
+                cost += m * dt;
             }
 
             if (cost + 1e-9 < bestCost) {
                 bestCost = cost;
                 bestStart = t;
-                nBest = 1;
-            } else if (Math.abs(cost - bestCost) <= 1e-9) {
-                nBest++;
-                if (Math.random() < 1.0 / nBest) {
-                    bestStart = t;
-                }
             }
         }
 
-        // Coincidence: interpret cfg.getCoincidenceFactor() as probability of *not* shifting-  pBlock = 0.25 → 25% ignore optimum, 75% follow it.
-        double pBlock = cfg.getCoincidenceFactor();
-        if (pBlock > 0.0) {
-            double r = Math.random();
-            if (r < pBlock) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format(
-                            "ToU: aware but blocked by coincidence: r=%.3f < pBlock=%.2f " +
-                                    "(arr=%.0f dep=%.0f dur=%.0f → bestStart=%.0f cost=%.3f → returning arrival)",
-                            r, pBlock, arrivalTime, departureTime, chargingDuration, bestStart, bestCost
-                    ));
+        // Coincidence as dispersion (std-dev) for deferred starts
+        if (bestStart > arrivalTime + 1.0) {
+            double cf = cfg.getCoincidenceFactor();
+            if (cf > 0.0) {
+                double maxSigma = Math.min(MAX_SIGMA_SEC, (latestStart - arrivalTime) / 2.0);
+                double sigma = cf * maxSigma;
+                if (sigma > 1.0) {
+                    double jitter = MatsimRandom.getLocalInstance().nextGaussian() * sigma;
+                    double jittered = bestStart + jitter;
+                    if (jittered < arrivalTime) jittered = arrivalTime;
+                    if (jittered > latestStart) jittered = latestStart;
+                    bestStart = jittered;
                 }
-                return arrivalTime;  // stay with arrivalTime despite having an optimum
             }
         }
 

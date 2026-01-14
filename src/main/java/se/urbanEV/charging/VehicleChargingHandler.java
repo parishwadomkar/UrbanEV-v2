@@ -179,8 +179,14 @@ public class VehicleChargingHandler
                                 }
                                 double energyRequiredKWh = energyRequiredJ / 3_600_000.0;
 
-                                // approximate charging duration using default home power (kW)
+                                // approximate charging duration using person home charger power if present, else default (kW)
                                 double powerKW = urbanEvCfg.getDefaultHomeChargerPower();
+                                Object pHomeP = person.getAttributes().getAttribute("homeChargerPower");
+                                if (pHomeP != null) {
+                                    try {
+                                        powerKW = Double.parseDouble(pHomeP.toString());
+                                    } catch (Exception ignored) { }
+                                }
                                 double chargingDuration = (powerKW > 0.0)
                                         ? (energyRequiredKWh / powerKW) * 3600.0
                                         : 0.0;

@@ -21,6 +21,7 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
     private double score;
     private static final String CHARGING_IDENTIFIER = " charging";
     private static final String LAST_ACT_IDENTIFIER = " end";
+    private static final double TOU_STEP_SEC = 15.0 * 60.0;
     private ChargingBehaviorScoresCollector chargingBehaviorScoresCollector = ChargingBehaviorScoresCollector.getInstance();
 
     final ChargingBehaviourScoringParameters params;
@@ -123,20 +124,44 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
                         unitPricePerKWh = 0.0;
                 }
 
-                // Effective βMoney = config-level βMoney * technical scaling factor
                 double effectiveBetaMoney = params.betaMoney * params.alphaScaleCost;
-
                 if (unitPricePerKWh > 0.0 && effectiveBetaMoney != 0.0) {
                     double touMultiplier = 1.0;
                     if ("home".equalsIgnoreCase(chargerType)) {
                         Double pricingTime = chargingBehaviourScoringEvent.getPricingTime();
                         double tForPricing = (pricingTime != null) ? pricingTime : event.getTime();
-                        touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+
+                        // Estimate charging duration from delivered energy and available power
+                        double powerKW = params.defaultHomeChargerPower;
+                        Object pHomeP = person.getAttributes().getAttribute("homeChargerPower");
+                        if (pHomeP != null) {
+                            try  {
+                                powerKW = Double.parseDouble(pHomeP.toString());
+                            } catch (Exception ignored) { }
+                        }
+                        if (powerKW > 0.0) {
+                            double durationSec = (energyChargedKWh / powerKW) * 3600.0;
+                            if (durationSec > 1.0) {
+                                double tEnd = tForPricing + durationSec;
+                                double wSum = 0.0;
+                                double dtSum = 0.0;
+                                for (double tt = tForPricing; tt < tEnd - 1e-6; tt += TOU_STEP_SEC) {
+                                    double dt = Math.min(TOU_STEP_SEC, tEnd - tt);
+                                    double m = ChargingCostUtils.getHourlyCostMultiplier(tt);
+                                    wSum += m * dt;
+                                    dtSum += dt;
+                                }
+                                touMultiplier = (dtSum > 0.0) ? (wSum / dtSum) : ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                            } else {
+                                touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                            }
+                        } else {
+                            touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                        }
                     }
 
                     double baseChargingCost = energyChargedKWh * unitPricePerKWh * touMultiplier;
                     double delta_score = effectiveBetaMoney * baseChargingCost;
-
                     chargingBehaviorScoresCollector.addScoringComponentValue(ScoreComponents.CHARGING_COST, delta_score);
                     chargingBehaviorScoresCollector.addScoringPerson(ScoreComponents.CHARGING_COST, person.getId());
                     score += delta_score;
