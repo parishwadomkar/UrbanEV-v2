@@ -30,13 +30,13 @@
         <param name="defaultWorkChargerPower" value="11"/>
 
         <!-- Charger Costs (OmkarP. 2025) -->
-        <param name="homeChargingCost" value="2.5"/>
+        <param name="homeChargingCost" value="1.5"/>
         <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
-        <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
-        <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
+        <param name="betaMoney" value="-0.05"/>            <!--- VoT ~120 SEK/hr; −0.08 ~75 SEK/h Remove Cost - 0.0 -->
+        <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="1.0"/>
+        <param name="alphaScaleTemporal" value="0.8"/>
         <param name="awarenessFactor" value="0.7"/>
         <param name="coincidenceFactor" value="0.3"/>
     </module>
@@ -72,7 +72,7 @@
         <param name="outputDirectory" value="output/1pct/03_Smart_172hrs" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="60"/>
+        <param name="lastIteration" value="40"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="50"/>
@@ -207,7 +207,7 @@
                 <param name="typicalDurationScoreComputation" value="relative"/>
             </parameterset>
 
-            <!-- EV charging activity types created by UrbanEV -->
+            <!-- EV charging activity types created by UrbanEV- when clubbed with CN scoring -->
             <parameterset type="activityParams">
                 <param name="activityType" value="home charging"/>
                 <param name="scoringThisActivityAtAll" value="false"/>

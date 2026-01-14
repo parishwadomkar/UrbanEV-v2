@@ -11,6 +11,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
     public final double marginalUtilityOfWalking_m;
     public final double utilityOfHomeCharging;
     public final double marginalUtilityOfSocDifference;
+    public final double defaultRangeAnxietyThreshold;
 
     //added spatio-temporal components for charging costs- OmkarP.(2025)
     public final double betaMoney;
@@ -18,6 +19,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
     public final double workChargingCost;
     public final double publicChargingCost;
     public final double alphaScaleCost;   // cost scaling
+    public final double defaultHomeChargerPower; // kW
 
     private ChargingBehaviourScoringParameters(
             final double marginalUtilityOfRangeAnxiety_soc,
@@ -25,9 +27,10 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             final double marginalUtilityOfWalking_m,
             final double utilityOfHomeCharging,
             final double marginalUtilityOfSocDifference,
-
+            final double defaultRangeAnxietyThreshold,
             final double betaMoney,
             final double alphaScaleCost,
+            final double defaultHomeChargerPower,
             final double homeChargingCost,
             final double workChargingCost,
             final double publicChargingCost) {
@@ -36,9 +39,10 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
         this.marginalUtilityOfWalking_m = marginalUtilityOfWalking_m;
         this.utilityOfHomeCharging = utilityOfHomeCharging;
         this.marginalUtilityOfSocDifference = marginalUtilityOfSocDifference;
-
+        this.defaultRangeAnxietyThreshold = defaultRangeAnxietyThreshold;
         this.betaMoney = betaMoney;
         this.alphaScaleCost = alphaScaleCost;
+        this.defaultHomeChargerPower = defaultHomeChargerPower;
         this.homeChargingCost = homeChargingCost;
         this.workChargingCost = workChargingCost;
         this.publicChargingCost = publicChargingCost;
@@ -50,9 +54,10 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
         private double marginalUtilityOfWalking_m;
         private double utilityOfHomeCharging;
         private double marginalUtilityOfSocDifference;
-
+        private double defaultRangeAnxietyThreshold;
         private double betaMoney;
         private double alphaScaleCost;
+        private double defaultHomeChargerPower;
         private double homeChargingCost;
         private double workChargingCost;
         private double publicChargingCost;
@@ -67,6 +72,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             marginalUtilityOfWalking_m = configGroup.getWalkingUtility();
             utilityOfHomeCharging = configGroup.getHomeChargingUtility();
             marginalUtilityOfSocDifference = configGroup.getSocDifferenceUtility();
+            defaultRangeAnxietyThreshold = configGroup.getDefaultRangeAnxietyThreshold();
 
             // Cost and ToU-related parameters: OmkarP.(2025)
             betaMoney = configGroup.getBetaMoney();
@@ -74,9 +80,14 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             homeChargingCost = configGroup.getHomeChargingCost();
             workChargingCost = configGroup.getWorkChargingCost();
             publicChargingCost = configGroup.getPublicChargingCost();
+            defaultHomeChargerPower = configGroup.getDefaultHomeChargerPower();
 
-            // Guard against scaling
-            if (alphaScaleCost < 0.0) { alphaScaleCost = 0.0; }
+            if (!Double.isFinite(alphaScaleCost) || alphaScaleCost < 0.0) {
+                alphaScaleCost = 0.0;
+            }
+            if (!Double.isFinite(defaultRangeAnxietyThreshold) || defaultRangeAnxietyThreshold <= 0.0) {
+                defaultRangeAnxietyThreshold = 0.2;
+            }
         }
 
         public ChargingBehaviourScoringParameters build() {
@@ -86,9 +97,10 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
                     marginalUtilityOfWalking_m,
                     utilityOfHomeCharging,
                     marginalUtilityOfSocDifference,
-
+                    defaultRangeAnxietyThreshold,
                     betaMoney,
                     alphaScaleCost,
+                    defaultHomeChargerPower,
                     homeChargingCost,
                     workChargingCost,
                     publicChargingCost

@@ -101,6 +101,9 @@ public class GotEVMain {
             }
         });
 
+
+        // Todo: set to default CN scoring baseFactory when calibrated params are acquired
+        // final ScoringFunctionFactory baseFactory = new CharyparNagelScoringFunctionFactory(scenario);
         controler.setScoringFunctionFactory(new ScoringFunctionFactory() {
             @Override
             public ScoringFunction createNewScoringFunction(Person person) {
