@@ -14,14 +14,14 @@
         <param name="parkingSearchRadius" value="500"/>
         <param name="defaultRangeAnxietyThreshold" value="0.2"/>
         <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-        <param name="rangeAnxietyUtility" value="-10"/>
-        <param name="emptyBatteryUtility" value="-30"/>
+        <param name="rangeAnxietyUtility" value="-4"/>
+        <param name="emptyBatteryUtility" value="-10"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-15"/>
-        <param name="maxNumberSimultaneousPlanChanges" value="2"/>
-        <param name="timeAdjustmentProbability" value="0.1"/>
-        <param name="maxTimeFlexibility" value="600"/>
+        <param name="socDifferenceUtility" value="-8"/>
+        <param name="maxNumberSimultaneousPlanChanges" value="3"/>
+        <param name="timeAdjustmentProbability" value="0.2"/>
+        <param name="maxTimeFlexibility" value="1600"/>
         <param name="generateHomeChargersByPercentage" value="false"/>
         <param name="homeChargerPercentage" value="80"/>
         <param name="defaultHomeChargerPower" value="11"/>
@@ -30,15 +30,15 @@
         <param name="defaultWorkChargerPower" value="11"/>
 
         <!-- Charger Costs (OmkarP. 2025) -->
-        <param name="homeChargingCost" value="1.5"/>
+        <param name="homeChargingCost" value="2.5"/>
         <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
-        <param name="betaMoney" value="-0.05"/>            <!--- VoT ~120 SEK/hr; −0.08 ~75 SEK/h Remove Cost - 0.0 -->
+        <param name="betaMoney" value="-0.05"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="0.8"/>
-        <param name="awarenessFactor" value="0.7"/>
-        <param name="coincidenceFactor" value="0.3"/>
+        <param name="alphaScaleTemporal" value="1.0"/>
+        <param name="awarenessFactor" value="0.3"/>
+        <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
     </module>
 
     <module name="global">
@@ -72,7 +72,7 @@
         <param name="outputDirectory" value="output/1pct/03_Smart_172hrs" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="40"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="50"/>

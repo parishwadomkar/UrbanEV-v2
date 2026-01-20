@@ -105,8 +105,8 @@ public class ChargerPowerCollector
         double pluggedDuration = unplugTime - startTime;
 
         if (pluggedDuration <= 0.0) {
-            log.warn("Non-positive pluggedDuration for EV " + ev.getId()
-                    + " (start=" + startTime + ", unplug=" + unplugTime + "); dropping entry.");
+//            log.warn("Non-positive pluggedDuration for EV " + ev.getId()
+//                    + " (start=" + startTime + ", unplug=" + unplugTime + "); dropping entry.");
             return;
         }
 
