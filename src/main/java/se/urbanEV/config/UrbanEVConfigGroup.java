@@ -203,7 +203,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(BETA_MONEY, BETA_MONEY_EXP);
         map.put(ALPHA_SCALE_COST, ALPHA_SCALE_COST_EXP);
         map.put(ENABLE_SMART_CHARGING, "Enable smart charging behavior: delayed start times, ToU awareness, and coincidence effect.");
-        map.put(COINCIDENCE_FACTOR, "Dispersion factor [0.0–1.0] controlling the std-dev of deferred start times within the shifted low-ToU window (truncated normal).");
+        map.put(COINCIDENCE_FACTOR, "Probability that multiple rescheduled charging events start at the same time in the shifted low-ToU window.");
         map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
         map.put(ALPHA_SCALE_TEMPORAL, "Temporal shift controller in (0,1]. 1.0=no shift; values closer to 0 shift the low-ToU window earlier..");
 

@@ -12,10 +12,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * created by omkarp, 10.01.2025
+ * created by OmkarP.(2025)
  * Scheduler for deferred smart charging.
  *
- * IMPORTANT:
  * This is now a pure helper class, NOT an EventHandler.
  * It is driven explicitly by VehicleChargingHandler, which calls processDueTasks(now)
  * from its own event callbacks. This avoids interfering with the MATSim
