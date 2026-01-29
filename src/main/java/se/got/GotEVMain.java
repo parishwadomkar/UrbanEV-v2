@@ -31,7 +31,7 @@ public class GotEVMain {
     public static void main(String[] args) throws IOException {
 
         String configPath = "";
-        int initIterations = 5;
+        int initIterations = 20;
         if (args != null && args.length == 2) {
             configPath = args[0];
             initIterations = Integer.parseInt(args[1]);

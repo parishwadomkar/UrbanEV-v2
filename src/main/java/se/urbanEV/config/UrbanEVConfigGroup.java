@@ -205,7 +205,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(ENABLE_SMART_CHARGING, "Enable smart charging behavior: delayed start times, ToU awareness, and coincidence effect.");
         map.put(COINCIDENCE_FACTOR, "Probability that multiple rescheduled charging events start at the same time in the shifted low-ToU window.");
         map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
-        map.put(ALPHA_SCALE_TEMPORAL, "Temporal shift controller in (0,1]. 1.0=no shift; values closer to 0 shift the low-ToU window earlier..");
+        map.put(ALPHA_SCALE_TEMPORAL, "Temporal preference index in [0,2]. 0 biases shifted charging near start of low-ToU; " + "2 biases near end of low-ToU; 1 biases mid-window.");
 
         return map;
     }
@@ -466,13 +466,12 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
             this.alphaScaleTemporal = 1.0;
             return;
         }
-        // Interpret as a shift factor in [0,1]: 1=no shift, 0=max shift.
         if (v < 0.0) {
             log.warn("UrbanEVConfigGroup: alphaScaleTemporal < 0 (" + v + "), clamping to 0.0.");
             this.alphaScaleTemporal = 0.0;
-        } else if (v > 1.0) {
-            log.warn("UrbanEVConfigGroup: alphaScaleTemporal > 1 (" + v + "), clamping to 1.0.");
-            this.alphaScaleTemporal = 1.0;
+        } else if (v > 2.0) {
+            log.warn("UrbanEVConfigGroup: alphaScaleTemporal > 2 (" + v + "), clamping to 2.0.");
+            this.alphaScaleTemporal = 2.0;
         } else {
             this.alphaScaleTemporal = v;
         }
