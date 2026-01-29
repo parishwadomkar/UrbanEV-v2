@@ -58,7 +58,7 @@
     </module>
 
     <module name="plans">
-        <param name="inputPlansFile" value="1pct/GOTplans_1pct7Days.xml"/>
+        <param name="inputPlansFile" value="1pct/GOTplans_1pct7Days.xml.gz"/>
     </module>
 
     <module name="transit">
