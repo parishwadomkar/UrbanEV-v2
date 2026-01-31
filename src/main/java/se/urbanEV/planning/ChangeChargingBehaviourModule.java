@@ -8,7 +8,6 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.api.core.v01.replanning.PlanStrategyModule;
 import org.matsim.core.replanning.ReplanningContext;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -17,8 +16,7 @@ public class ChangeChargingBehaviourModule implements PlanStrategyModule, Chargi
 
     private static final String CHARGING_IDENTIFIER = " charging";
     private static final String CHARGING_FAILED_IDENTIFIER = " charging failed";
-
-    private Random random = new Random();
+    private final Random random = org.matsim.core.gbl.MatsimRandom.getLocalInstance();
     private Scenario scenario;
     private Network network;
     private Population population;

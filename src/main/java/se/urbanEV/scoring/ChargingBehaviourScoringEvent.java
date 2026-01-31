@@ -15,7 +15,6 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
     private final Double walkingDistance;
     private final String activityType;
     private final Double startSoc;
-
     private final Double energyChargedKWh;
     private final String chargerType;
     private final boolean costOnly;

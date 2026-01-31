@@ -45,7 +45,11 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
             if (!costOnly) {
 
                 // punish soc below threshold
-                double rangeAnxietyThreshold = Double.parseDouble(person.getAttributes().getAttribute("rangeAnxietyThreshold").toString());
+                Object thrObj = person.getAttributes().getAttribute("rangeAnxietyThreshold");
+                double rangeAnxietyThreshold = (thrObj != null)
+                        ? Double.parseDouble(thrObj.toString())
+                        : params.defaultRangeAnxietyThreshold;
+
                 if (soc > 0 && soc < rangeAnxietyThreshold) {
                     double delta_score = params.marginalUtilityOfRangeAnxiety_soc * (rangeAnxietyThreshold - soc) / rangeAnxietyThreshold;
                     chargingBehaviorScoresCollector.addScoringComponentValue(ScoreComponents.RANGE_ANXIETY, delta_score);

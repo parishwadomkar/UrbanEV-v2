@@ -33,6 +33,7 @@ package se.urbanEV.charging;
  *  This is an events based approach to trigger vehicle charging. Vehicles will be charged as soon as a person begins a charging activity.
  */
 
+import org.matsim.core.config.Config;
 import se.urbanEV.MobsimScopeEventHandling;
 import se.urbanEV.config.UrbanEVConfigGroup;
 import se.urbanEV.fleet.ElectricFleet;
@@ -86,6 +87,7 @@ public class VehicleChargingHandler
     private final Population population;
     private final int parkingSearchRadius;
     private final EventsManager eventsManager;
+    private final double qsimEndTime;
 
     // scheduler for smart charging: OmkarP.(2025)
     private final UrbanEVConfigGroup urbanEvCfg;
@@ -98,7 +100,8 @@ public class VehicleChargingHandler
                                   Population population,
                                   EventsManager eventsManager,
                                   MobsimScopeEventHandling events,
-                                  UrbanEVConfigGroup urbanEVCfg) {
+                                  UrbanEVConfigGroup urbanEVCfg,
+                                  Config config) {
         this.chargingInfrastructure = chargingInfrastructure;
         this.network = network;
         this.electricFleet = electricFleet;
@@ -107,10 +110,8 @@ public class VehicleChargingHandler
         this.parkingSearchRadius = urbanEVCfg.getParkingSearchRadius();
         this.urbanEvCfg = urbanEVCfg;
 
-        // instantiate smart scheduler
+        this.qsimEndTime = config.qsim().getEndTime().seconds();
         this.smartScheduler = new SmartChargingScheduler(chargingInfrastructure, electricFleet, this);
-
-        // only VehicleChargingHandler is a MobsimScopeEventHandler
         events.addMobsimScopeHandler(this);
     }
 
@@ -167,9 +168,15 @@ public class VehicleChargingHandler
                         boolean smartEnabled = urbanEvCfg.isEnableSmartCharging() && isHomeChargingAct;
 
                         // Smart ToU aware rescheduling: OmkarP.(2025)
-                        if (smartEnabled && activity != null && activity.getEndTime().isDefined()) {
+                        if (smartEnabled && activity != null) {
                             double arrivalTime = event.getTime();
-                            double departureTime = activity.getEndTime().seconds();
+
+                            double departureTime;
+                            if (activity.getEndTime().isDefined()) {
+                                departureTime = activity.getEndTime().seconds();
+                            } else {
+                                departureTime = qsimEndTime;
+                            }
 
                             if (departureTime > arrivalTime) {
                                 // energy missing (J - kWh)
@@ -183,13 +190,13 @@ public class VehicleChargingHandler
                                 double powerKW = urbanEvCfg.getDefaultHomeChargerPower();
                                 Object pHomeP = person.getAttributes().getAttribute("homeChargerPower");
                                 if (pHomeP != null) {
-                                    try {
-                                        powerKW = Double.parseDouble(pHomeP.toString());
-                                    } catch (Exception ignored) { }
+                                    try { powerKW = Double.parseDouble(pHomeP.toString()); } catch (Exception ignored) { }
                                 }
-                                double chargingDuration = (powerKW > 0.0)
-                                        ? (energyRequiredKWh / powerKW) * 3600.0
-                                        : 0.0;
+
+                                double effectiveKW = Math.max(0.1, 0.85 * powerKW);
+                                double chargingDuration = (energyRequiredKWh / effectiveKW) * 3600.0;
+                                double maxDur = Math.max(0.0, departureTime - arrivalTime);
+                                chargingDuration = Math.min(chargingDuration, maxDur);
 
                                 // Person-level awareness from attributes
                                 Object awareAttr = person.getAttributes().getAttribute("smartChargingAware");
@@ -238,7 +245,7 @@ public class VehicleChargingHandler
                                     chargeStartTime.put(evId, arrivalTime);
                                 }
                             } else {
-                                // weird time window, just plug immediately
+                                // fallback immediate
                                 double t = event.getTime();
                                 selectedCharger.getLogic().addVehicle(ev, t);
                                 vehiclesAtChargers.put(evId, selectedCharger.getId());
@@ -320,6 +327,18 @@ public class VehicleChargingHandler
                             chargerType = "work";
                         } else {
                             chargerType = "public";
+                        }
+
+                        if (startTime != null && energyChargedKWh > 0.0) {
+                            double durH = Math.max(1e-6, (event.getTime() - startTime) / 3600.0);
+                            double avgKW = energyChargedKWh / durH;
+
+                            if (chargerType != null && chargerType.equals("home")) {
+                                log.info(String.format(
+                                        "HOME session: person=%s ev=%s start=%.0f end=%.0f kWh=%.2f avg_kW=%.2f",
+                                        event.getPersonId(), evId, startTime, event.getTime(), energyChargedKWh, avgKW
+                                ));
+                            }
                         }
 
                         double socFrac = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
@@ -445,6 +464,7 @@ public class VehicleChargingHandler
         chargeStartTime.clear();
 
         if (smartScheduler != null) {
+            log.info(smartScheduler.consumeStatsLine(iteration));
             smartScheduler.reset();
         }
     }
