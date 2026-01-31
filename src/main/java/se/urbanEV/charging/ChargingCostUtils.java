@@ -8,11 +8,12 @@ public final class ChargingCostUtils {
     /**
      * created by omkarp, 10.01.2025
      * Returns the hourly ToU multiplier M_temporal(t) for a given simulation time.
+     *
      * @param timeSeconds simulation time in seconds (MATSim standard)
      * @return multiplier (dimensionless)
      */
     public static double getHourlyCostMultiplier(double timeSeconds) {
-        int minuteOfDay = ((int) (timeSeconds / 60)) % 1440; // 0..1439
+        int minuteOfDay = (int) Math.floorMod((long) Math.floor(timeSeconds / 60.0), 1440L);
 
         if (minuteOfDay < 360) {                               // 00:00–06:00
             return 0.7;
@@ -27,7 +28,7 @@ public final class ChargingCostUtils {
         } else if (minuteOfDay < 1320) {                       // 20:00–22:00
             return 1.0;
         } else {                                               // 22:00–24:00
-            return 0.8;
+            return 0.7;
         }
     }
 }

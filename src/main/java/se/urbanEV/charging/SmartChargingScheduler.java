@@ -22,6 +22,10 @@ import java.util.Map;
  */
 public class SmartChargingScheduler {
     private static final Logger log = Logger.getLogger(SmartChargingScheduler.class);
+    private long nScheduled = 0;
+    private long nPlugged = 0;
+    private long nMissing = 0;
+
     private final ChargingInfrastructure infra;
     private final ElectricFleet fleet;
     private final VehicleChargingHandler chargingHandler;
@@ -41,6 +45,7 @@ public class SmartChargingScheduler {
     public synchronized void schedule(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
         double clampedStart = Math.max(0.0, startTime);
         scheduled.put(evId, new ScheduledCharge(evId, chargerId, clampedStart));
+        nScheduled++;
         log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) clampedStart + " on charger " + chargerId);
     }
 
@@ -67,24 +72,40 @@ public class SmartChargingScheduler {
             ScheduledCharge sc = e.getValue();
 
             if (sc.startTime <= now + 1e-3) {
-                // remove first to prevent double-execution under re-entrance
                 it.remove();
 
                 ElectricVehicle ev = fleet.getElectricVehicles().get(sc.evId);
                 Charger charger = infra.getChargers().get(sc.chargerId);
                 if (ev == null || charger == null) {
-                    log.warn("SmartChargingScheduler: could not plug EV " + sc.evId + " at t=" + (int) now + " (ev or charger missing)");
+                    nMissing++;
+                    continue;
+                }
+                int plugged = charger.getLogic().getPluggedVehicles().size();
+                int plugs = charger.getPlugCount();
+                if (plugged >= plugs) {
+                    log.warn("SmartChargingScheduler: charger FULL at plug time; ev=" + sc.evId
+                            + " charger=" + sc.chargerId + " now=" + (int) now
+                            + " scheduled=" + (int) sc.startTime + " plugged=" + plugged + "/" + plugs
+                            + " -> retry in 300s");
+                    scheduled.put(sc.evId, new ScheduledCharge(sc.evId, sc.chargerId, now + 300.0));
                     continue;
                 }
 
                 charger.getLogic().addVehicle(ev, now);
                 chargingHandler.onSmartChargePlugged(sc.evId, sc.chargerId, now);
-
-                log.info("SmartChargingScheduler: plugging EV " + sc.evId
-                        + " at charger " + sc.chargerId
-                        + " at t=" + (int) now + " (scheduled t=" + (int) sc.startTime + ")");
+                nPlugged++;
             }
         }
+    }
+
+    public synchronized String consumeStatsLine(int iteration) {
+        String s = "SmartChargingScheduler stats: it=" + iteration
+                + " scheduled=" + nScheduled
+                + " plugged=" + nPlugged
+                + " missing=" + nMissing
+                + " pending=" + scheduled.size();
+        nScheduled = 0; nPlugged = 0; nMissing = 0;
+        return s;
     }
 
     public synchronized void reset() {
