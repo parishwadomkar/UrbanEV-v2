@@ -1,4 +1,4 @@
-# UrbanEV-v2 (v2.1): Cost-aware and Adaptive EV Charging Demand in MATSim
+# UrbanEV-v2 - Cost-aware and Adaptive EV Charging Demand in MATSim
 
 UrbanEV-v2 is a research oriented extension of the UrbanEV framework that enables **spatiotemporal EV charging-demand estimation** with **explicit charging cost scoring** and **ToU aware (adaptive) charging time rescheduling** in a MATSim-based simulation workflow.
 
@@ -13,10 +13,10 @@ UrbanEV-v2 preserves UrbanEV’s **multi-criteria charging behavior** and infras
    Charging decisions internalize monetary charging costs via additional utility terms (scaled and converted into MATSim utility units), enabling scenario analysis under different tariff assumptions.
 
 2. **Adaptive (ToU aware) smart charging**  
-   When a feasible parking window exists (home/work), charging start times can be **shifted to lower-cost intervals** (Time-of-Use logic) subject to behavioral “awareness” and stochastic coincidence.
+   When a feasible parking window exists (currently implemented for home charging activities), charging start times can be **shifted to lower-cost intervals** (Time-of-Use logic) subject to behavioral “awareness” and stochastic coincidence.
 
 These additions are designed to be **config-driven** and avoid heavy restructuring (no requirement to introduce separate EV config formats beyond what UrbanEV already uses).
-
+Smart (ToU-aware) rescheduling is currently implemented for home charging. Extending the same logic to work charging would require enabling it for work charging activities.
 
 ---
 
@@ -41,6 +41,7 @@ EV access to home/work charging is encoded as **person attributes**:
 - `rangeAnxietyThreshold` (agent heterogeneity)
 - `homeChargerPower` (kW)
 - `workChargerPower` (kW)
+- `smartChargingAware` (boolean; assigned at runtime from `awarenessFactor` unless pre-populated)
 
 ### 2) Electric vehicles (UrbanEV / EV DTD)
 Electric vehicles are provided via UrbanEV’s EV XML (battery capacity, initial SoC, vehicle type).
@@ -72,7 +73,7 @@ Public chargers are defined at coordinates with plug power and plug count.
 
 UrbanEV-v2 extends the `urban_ev` config module with additional parameters to activate and calibrate **charging cost** and **adaptive smart charging** for ToU aware behavior.
 
-### Cost & Smart Charging parameters (Scenario 3 default: Adaptive smart charging)
+### Cost & Smart Charging parameters (Scenario 3 example config: Adaptive smart charging)
 
 ```xml
 <module name="urban_ev">
@@ -114,8 +115,8 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 
     <!-- Smart charging (ToU aware temporal shifting) -->
     <param name="enableSmartCharging" value="true"/>
-    <param name="awarenessFactor" value="0.7"/>
-    <param name="coincidenceFactor" value="0.3"/>
+    <param name="awarenessFactor" value="0.3"/>
+    <param name="coincidenceFactor" value="0.7"/>
 </module>
 ```
 
@@ -124,10 +125,10 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 - `homeChargingCost` / `workChargingCost` / `publicChargingCost`: base electricity tariffs (SEK/kWh) by charging context used to compute monetary charging expenditures.
 - `betaMoney`: marginal utility of money used to translate charging expenditures into (dis)utility (negative values penalize cost). Calibrate considering Value of Time (VoT) to avoid overwhelming time/activity utilities.
 - `alphaScaleCost`: additional multiplicative calibration factor applied to the monetary disutility term (scale the cost penalty to consider minor external factors outside VoT).
-- `enableSmartCharging`: activates the ToU-aware rescheduling logic for charging start times within feasible parking windows (Scenario 3). Here applied specifically for home charging.
-- `alphaScaleTemporal`: ToU-sensitivity parameter used only inside the rescheduling objective shaping how strongly earlier multiplier hours are preferred (kept separate from realized cost scoring).
+- `enableSmartCharging`: activates the ToU-aware rescheduling logic for charging start times within feasible parking windows (Scenario 3). In the current implementation it is applied to home charging activities.
+- `alphaScaleTemporal`: temporal preference shaping term used only in the smart rescheduler, clamped to `[0, 2]` and mapped to a preferred start time within the low-tariff window (22:00–06:00); among cost-minimizing feasible start times, selection is biased toward this preferred time.
 - `awarenessFactor`: share/probability of agents behaving as ToU-aware (bounded rationality / partial adoption).
-- `coincidenceFactor`: probability of “charging immediately anyway” (or not perfectly optimizing) even when ToU-aware, to prevent unrealistic synchronization at tariff minima.
+- `coincidenceFactor`: probability of charging at the same time/ dispersion control in the smart rescheduler. Values near 1 concentrate choices near the preferred low-tariff start time (high coincidence), while lower values increase dispersion (less synchronized start times).
 
 ---
 ## Outputs
@@ -140,11 +141,12 @@ UrbanEV-v2 produces standard MATSim outputs (iterations, experienced plans, even
 - Cost outcomes (total cost, cost per charge, distributional summaries)
 - Behavioral effects of ToU (load shifting metrics, peak reduction)
 
+For additional **spatial and temporal charging demand sensitivity analysis results** with explanations and visualizations, see the simulation results in [README](https://github.com/parishwadomkar/UrbanEV-v2/blob/master/output/1pct/Readme.md) in the output folder.
 
 ---
 ## Requirements
 
-- **Java (MATSim 12.x toolchains)**  
+- **Java (MATSim 12.x toolchains; snapshots also supported via Maven coordinates)**  
 - **Maven** (to build the executable jar)
 
 You will need enough RAM for your scenario scale (1% is typically fine on a workstation; larger samples require more).
