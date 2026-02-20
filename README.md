@@ -2,6 +2,7 @@
 
 UrbanEV-v2 is a research oriented extension of the UrbanEV framework that enables **spatiotemporal EV charging-demand estimation** with **explicit charging cost scoring** and **ToU aware (adaptive) charging time rescheduling** in a MATSim-based simulation workflow.
 
+![Simulated EV Charging User Behavior](https://github.com/user-attachments/assets/6b031a4d-e4e2-49a3-995c-f0d29c4a3032)
 
 ---
 
@@ -187,12 +188,12 @@ For MATSim-core or MATSim-EV specifics, consult MATSim community channels and do
 
 This repository refers to the published research and methods described in:
 
-- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan** — *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior* *Transportation Research Part D: Transport and Environment*, 154 (2026) 105285.  
+- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan** — *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior*. **Transportation Research Part D: Transport and Environment**, 154 (2026) 105285.  
   (DOI: https://doi.org/10.1016/j.trd.2026.105285)
 
 - **Parishwad, Omkar; Najafi, Arsalan; Gao, Kun** — *Joint optimization of charging infrastructure and renewable energies with battery storage considering user redirection incentives.*  (SSRN preprint, Aug 15, 2025).  
-  SSRN preprint: https://doi.org/10.2139/ssrn.5395539
-- LargeScaleOptimization codebase: https://github.com/parishwadomkar/Optimization/tree/main/LargeScaleOptimization
+  *SSRN preprint:* https://doi.org/10.2139/ssrn.5395539
+  *LargeScaleOptimization codebase:* https://github.com/parishwadomkar/Optimization/tree/main/LargeScaleOptimization
 
 - **Omkar Parishwad (PhD Thesis / Chalmers publication page)**  
   https://research.chalmers.se/publication/547894
