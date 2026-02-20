@@ -1,4 +1,4 @@
-# UrbanEV-v2 - Cost-aware and Adaptive EV Charging Demand in MATSim
+# UrbanEV (v2) - Cost-aware and Adaptive EV Charging Demand in MATSim
 
 UrbanEV-v2 is a research oriented extension of the UrbanEV framework that enables **spatiotemporal EV charging-demand estimation** with **explicit charging cost scoring** and **ToU aware (adaptive) charging time rescheduling** in a MATSim-based simulation workflow.
 
@@ -80,21 +80,17 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
     <param name="parkingSearchRadius" value="500"/>
     <param name="defaultRangeAnxietyThreshold" value="0.2"/>
     <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-
     <param name="rangeAnxietyUtility" value="-10"/>
     <param name="emptyBatteryUtility" value="-30"/>
     <param name="walkingUtility" value="-1"/>
     <param name="homeChargingUtility" value="0"/>
     <param name="socDifferenceUtility" value="-15"/>
-
     <param name="maxNumberSimultaneousPlanChanges" value="2"/>
     <param name="timeAdjustmentProbability" value="0.1"/>
     <param name="maxTimeFlexibility" value="600"/>
-
     <param name="generateHomeChargersByPercentage" value="false"/>
     <param name="homeChargerPercentage" value="80"/>
     <param name="defaultHomeChargerPower" value="11"/>
-
     <param name="generateWorkChargersByPercentage" value="false"/>
     <param name="workChargerPercentage" value="20"/>
     <param name="defaultWorkChargerPower" value="11"/>
@@ -126,7 +122,7 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
 - `betaMoney`: marginal utility of money used to translate charging expenditures into (dis)utility (negative values penalize cost). Calibrate considering Value of Time (VoT) to avoid overwhelming time/activity utilities.
 - `alphaScaleCost`: additional multiplicative calibration factor applied to the monetary disutility term (scale the cost penalty to consider minor external factors outside VoT).
 - `enableSmartCharging`: activates the ToU-aware rescheduling logic for charging start times within feasible parking windows (Scenario 3). In the current implementation it is applied to home charging activities.
-- `alphaScaleTemporal`: temporal preference shaping term used only in the smart rescheduler, clamped to `[0, 2]` and mapped to a preferred start time within the low-tariff window (22:00–06:00); among cost-minimizing feasible start times, selection is biased toward this preferred time.
+- `alphaScaleTemporal`: temporal preference shaping term used only in the smart rescheduler, clamped to `[0, 2]` and mapped to a preferred start time within the low-tariff window (22:00–06:00). Among cost-minimizing feasible start times, selection is biased toward this preferred time.
 - `awarenessFactor`: share/probability of agents behaving as ToU-aware (bounded rationality / partial adoption).
 - `coincidenceFactor`: probability of charging at the same time/ dispersion control in the smart rescheduler. Values near 1 concentrate choices near the preferred low-tariff start time (high coincidence), while lower values increase dispersion (less synchronized start times).
 
@@ -189,10 +185,14 @@ For MATSim-core or MATSim-EV specifics, consult MATSim community channels and do
 ---
 ## Associated Articles
 
-This repository implements the methods described in:
+This repository refers to the published research and methods described in:
 
-- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan** — *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior* (SSRN, Aug 16, 2025).  
-  https://ssrn.com/abstract=5582536 (DOI: 10.2139/ssrn.5582536)
+- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan** — *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior* *Transportation Research Part D: Transport and Environment*, 154 (2026) 105285.  
+  (DOI: https://doi.org/10.1016/j.trd.2026.105285)
+
+- **Parishwad, Omkar; Najafi, Arsalan; Gao, Kun** — *Joint optimization of charging infrastructure and renewable energies with battery storage considering user redirection incentives.*  (SSRN preprint, Aug 15, 2025).  
+  SSRN preprint: https://doi.org/10.2139/ssrn.5395539
+- LargeScaleOptimization codebase: https://github.com/parishwadomkar/Optimization/tree/main/LargeScaleOptimization
 
 - **Omkar Parishwad (PhD Thesis / Chalmers publication page)**  
   https://research.chalmers.se/publication/547894
@@ -200,7 +200,7 @@ This repository implements the methods described in:
 UrbanEV-v2 is rooted in the original UrbanEV framework by Adenaw & Lienkamp:
 
 - **Adenaw, L.; Lienkamp, M.** *Multi-Criteria, Co-Evolutionary Charging Behavior: An Agent-Based Simulation of Urban Electromobility.* *World Electric Vehicle Journal* 2021, 12(1), 18.  
-  https://doi.org/10.3390/wevj12010018  
+  DOI: https://doi.org/10.3390/wevj12010018
 - Upstream codebase (reference): https://github.com/TUMFTM/UrbanEV
 
 
