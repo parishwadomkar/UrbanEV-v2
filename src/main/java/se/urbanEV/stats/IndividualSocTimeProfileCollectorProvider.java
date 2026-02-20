@@ -43,7 +43,9 @@ import org.matsim.core.mobsim.framework.listeners.MobsimListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import org.matsim.api.core.v01.Id;
 
 public class IndividualSocTimeProfileCollectorProvider implements Provider<MobsimListener> {
 	private final ElectricFleet evFleet;
@@ -61,21 +63,48 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 		return new TimeProfileCollector(calc, 300, "individual_soc_time_profiles", matsimServices);
 	}
 
-	private static final int MAX_VEHICLE_COLUMNS = 10;
+//	Instead of plotting random EV soc profiles, we choose to output the same EV profiles for each iteration (OmkarP.2026)
+	private static final List<Id<ElectricVehicle>> FIXED_EV_IDS = List.of(
+			Id.create("7368354", ElectricVehicle.class),
+			Id.create("9460181", ElectricVehicle.class),
+			Id.create("4680502", ElectricVehicle.class),
+			Id.create("9430738", ElectricVehicle.class),
+			Id.create("4575456", ElectricVehicle.class),
+			Id.create("2067447", ElectricVehicle.class),
+			Id.create("5908847", ElectricVehicle.class),
+			Id.create("1968395", ElectricVehicle.class),
+			Id.create("7326427", ElectricVehicle.class),
+			Id.create("2017219", ElectricVehicle.class)
+	);
 
+//	private static final int MAX_VEHICLE_COLUMNS = 10;
+
+//	public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
+//		int columns = Math.min(evFleet.getElectricVehicles().size(), MAX_VEHICLE_COLUMNS);
+//		List<ElectricVehicle> allEvs = new ArrayList<>();
+//		allEvs.addAll(evFleet.getElectricVehicles().values());
+//		Collections.shuffle(allEvs);
+//		List<ElectricVehicle> selectedEvs = allEvs.stream().limit(columns).collect(Collectors.toList());
+//
+//		String[] header = selectedEvs.stream().map(ev -> ev.getId() + "").toArray(String[]::new);
+//
+//		return TimeProfiles.createProfileCalculator(header, () -> {
+//			return selectedEvs.stream().map(ev -> EvUnits.J_to_kWh(ev.getBattery().getSoc()))/*in [kWh]*/
+//					.toArray(Double[]::new);
+//		});
+//	}
 	public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
-		int columns = Math.min(evFleet.getElectricVehicles().size(), MAX_VEHICLE_COLUMNS);
-		List<ElectricVehicle> allEvs = new ArrayList<>();
-		allEvs.addAll(evFleet.getElectricVehicles().values());
-		Collections.shuffle(allEvs);
-		List<ElectricVehicle> selectedEvs = allEvs.stream().limit(columns).collect(Collectors.toList());
+		List<ElectricVehicle> selectedEvs = FIXED_EV_IDS.stream()
+				.map(id -> evFleet.getElectricVehicles().get(id))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 
-		String[] header = selectedEvs.stream().map(ev -> ev.getId() + "").toArray(String[]::new);
+		String[] header = selectedEvs.stream().map(ev -> ev.getId().toString()).toArray(String[]::new);
 
-		return TimeProfiles.createProfileCalculator(header, () -> {
-			return selectedEvs.stream().map(ev -> EvUnits.J_to_kWh(ev.getBattery().getSoc()))/*in [kWh]*/
-					.toArray(Double[]::new);
-		});
+		return TimeProfiles.createProfileCalculator(header, () ->
+				selectedEvs.stream()
+						.map(ev -> EvUnits.J_to_kWh(ev.getBattery().getSoc()))
+						.toArray(Double[]::new)
+		);
 	}
-
 }
