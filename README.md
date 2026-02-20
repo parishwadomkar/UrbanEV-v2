@@ -80,14 +80,14 @@ UrbanEV-v2 extends the `urban_ev` config module with additional parameters to ac
     <param name="parkingSearchRadius" value="500"/>
     <param name="defaultRangeAnxietyThreshold" value="0.2"/>
     <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-    <param name="rangeAnxietyUtility" value="-10"/>
-    <param name="emptyBatteryUtility" value="-30"/>
+    <param name="rangeAnxietyUtility" value="-4"/>
+    <param name="emptyBatteryUtility" value="-12"/>
     <param name="walkingUtility" value="-1"/>
     <param name="homeChargingUtility" value="0"/>
-    <param name="socDifferenceUtility" value="-15"/>
-    <param name="maxNumberSimultaneousPlanChanges" value="2"/>
-    <param name="timeAdjustmentProbability" value="0.1"/>
-    <param name="maxTimeFlexibility" value="600"/>
+    <param name="socDifferenceUtility" value="-5"/>
+    <param name="maxNumberSimultaneousPlanChanges" value="3"/>
+    <param name="timeAdjustmentProbability" value="0.2"/>
+    <param name="maxTimeFlexibility" value="800"/>
     <param name="generateHomeChargersByPercentage" value="false"/>
     <param name="homeChargerPercentage" value="80"/>
     <param name="defaultHomeChargerPower" value="11"/>
