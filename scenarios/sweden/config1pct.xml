@@ -35,7 +35,7 @@
         <param name="publicChargingCost" value="5.5"/>
         <param name="betaMoney" value="-0.05"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>
-        <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
+        <param name="enableSmartCharging" value="false"/>   <!-- Remove smart rescheduling- false -->
         <param name="alphaScaleTemporal" value="0.5"/>
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
