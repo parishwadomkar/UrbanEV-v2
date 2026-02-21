@@ -302,7 +302,7 @@ public final class AggregatedDailyDemandProfilePlotter implements IterationEndsL
         ds.addSeries(sPub);
 
         JFreeChart chart = ChartFactory.createStackedXYAreaChart(
-                "Average 24h Charging Demand (hourly, stacked, smoothed)",
+                "Average 24h Charging Demand (hourly, stacked)",
                 "Hour of day",
                 "Average transmitted energy (kWh/hour)",
                 ds,
