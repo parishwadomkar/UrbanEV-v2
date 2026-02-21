@@ -1,0 +1,25 @@
+2026-02-21T20:52:02,697  WARN PrepareForSimImpl:222 'usePersonIdForMissingVehicleId' is deprecated. It will be removed soon.
+2026-02-21T20:52:02,908 ERROR PreProcessDijkstra:99 All 2 incident nodes of node 2699590685 are dead ends!
+2026-02-21T20:52:03,415  WARN RandomizingTimeDistanceTravelDisutilityFactory:117 There will be no routing randomness. The randomization of the travel disutility requires the travel time cost rate to be different than zero. Continuing anyway.
+2026-02-21T20:52:03,517 ERROR PreProcessDijkstra:99 All 2 incident nodes of node 2699590685 are dead ends!
+2026-02-21T20:52:09,891  WARN ObjectAttributesConverter:77 No AttributeConverter found for class java.util.Collections$UnmodifiableMap. Not all attribute values can be converted.
+2026-02-21T20:52:11,724  WARN QueueWithBuffer:390 Link 1005746 too small: enlarge storage capacity from: 0.7411543623193728 Vehicles to: 1.389525462905889 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,725  WARN QueueWithBuffer:390 Link 1012982 too small: enlarge storage capacity from: 0.6134000637294896 Vehicles to: 0.920008085584675 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,725  WARN QueueWithBuffer:390 Link 1012983 too small: enlarge storage capacity from: 0.6134000637294896 Vehicles to: 0.920008085584675 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,725  WARN QueueWithBuffer:390 Link 1014840 too small: enlarge storage capacity from: 0.7024809228426127 Vehicles to: 1.0536160121254927 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,725  WARN QueueWithBuffer:390 Link 1014841 too small: enlarge storage capacity from: 0.7024809228426127 Vehicles to: 1.0536160121254927 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018559 too small: enlarge storage capacity from: 0.3661252900104368 Vehicles to: 0.5491330162221536 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018560 too small: enlarge storage capacity from: 0.33743274241157967 Vehicles to: 0.5060984987060076 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018561 too small: enlarge storage capacity from: 0.27775 Vehicles to: 0.38669487355538446 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018562 too small: enlarge storage capacity from: 0.3117620626302155 Vehicles to: 0.4675963296359286 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018563 too small: enlarge storage capacity from: 0.2794616327208601 Vehicles to: 0.419150529836382 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:390 Link 1018564 too small: enlarge storage capacity from: 0.2927039954158032 Vehicles to: 0.4390120875243924 Vehicles.  This is not fatal, but modifies the traffic flow dynamics.
+2026-02-21T20:52:11,726  WARN QueueWithBuffer:393 Additional warnings of this type are suppressed.
+2026-02-21T20:53:26,302  WARN ObjectAttributesConverter:77 No AttributeConverter found for class java.util.Collections$UnmodifiableMap. Not all attribute values can be converted.
+2026-02-21T20:58:11,513 ERROR VehicleChargingHandler:448 No charger found for EV 3043426 at location [x=324154.90639999975 | y=6410372.4132]
+2026-02-21T21:16:06,810 ERROR VehicleChargingHandler:448 No charger found for EV 3043426 at location [x=324154.90639999975 | y=6410372.4132]
+2026-02-21T21:24:48,512 ERROR VehicleChargingHandler:448 No charger found for EV 3043426 at location [x=324154.90639999975 | y=6410372.4132]
+2026-02-21T21:29:06,305 ERROR VehicleChargingHandler:448 No charger found for EV 3043426 at location [x=324154.90639999975 | y=6410372.4132]
+2026-02-21T21:30:49,652 ERROR VehicleChargingHandler:448 No charger found for EV 3043426 at location [x=324154.90639999975 | y=6410372.4132]
+2026-02-21T21:43:07,498  WARN ObjectAttributesConverter:77 No AttributeConverter found for class java.util.Collections$UnmodifiableMap. Not all attribute values can be converted.
+2026-02-21T21:54:46,727  WARN ObjectAttributesConverter:77 No AttributeConverter found for class java.util.Collections$UnmodifiableMap. Not all attribute values can be converted.
