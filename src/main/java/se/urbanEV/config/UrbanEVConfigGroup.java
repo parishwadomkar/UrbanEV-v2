@@ -87,6 +87,17 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     private static final String AWARENESS_FACTOR = "awarenessFactor";
     private static final String COINCIDENCE_FACTOR = "coincidenceFactor";
 
+    private static final String SEASON = "season";
+    public static final String PV_VEHICLES_FILE = "pvVehiclesFile";
+    public static final String PV_SHARE = "pvShare";
+    public static final String PV_WP = "pvWp";
+    public static final String PV_PARKED_OPEN_SHARE = "pvParkedOpenShare";
+    static final String PV_PARKED_OPEN_SHARE_EXP = "Probability [0..1] that a PV-equipped EV is parked in open (sun) for a given parking instance.";
+    static final String PV_SHARE_EXP = "Share [0..1] of EVs equipped with rooftop PV.";
+    static final String PV_WP_EXP = "Peak PV power per equipped EV [Wp].";
+    static final String SEASON_EXP = "Season selector for ToU and PV potential: SPRING, SUMMER, AUTUMN, WINTER.";
+
+
 
     // Charger parameters
     private boolean generateHomeChargersByPercentage = false;
@@ -168,6 +179,20 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     private double awarenessFactor = 0.0;
     private double coincidenceFactor = 0.0;
 
+//    PV parameters (OmkarP.2006)
+    public enum Season { SUMMER, WINTER , AUTUMN, SPRING }
+    private Season season = Season.SUMMER;
+    private String pvVehiclesFile = "";
+
+    @PositiveOrZero
+    private double pvShare = 0.0;
+
+    @PositiveOrZero
+    private double pvWp = 400.0;
+
+    @PositiveOrZero
+    private double pvParkedOpenShare = 0.50;
+
 
 
 
@@ -206,6 +231,12 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(COINCIDENCE_FACTOR, "Probability that multiple rescheduled charging events start at the same time in the shifted low-ToU window.");
         map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
         map.put(ALPHA_SCALE_TEMPORAL, "Temporal preference index in [0,2]. 0 biases shifted charging near start of low-ToU; " + "2 biases near end of low-ToU; 1 biases mid-window.");
+
+        map.put(SEASON, SEASON_EXP);
+        map.put(PV_VEHICLES_FILE, "CSV file with EV ids that have rooftop PV (one id per row; optional header). Empty => use pvShare fallback.");
+        map.put(PV_SHARE, "Fallback share [0..1] of EVs assigned PV when pvVehiclesFile is empty.");
+        map.put(PV_WP, "PV peak power in W (Wp). Used with PvPotentialUtils factor to compute instantaneous PV power while driving.");
+        map.put(PV_PARKED_OPEN_SHARE, PV_PARKED_OPEN_SHARE_EXP);
 
         return map;
     }
@@ -477,6 +508,79 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         }
     }
 
+    @StringGetter(SEASON)
+    public Season getSeason() { return season; }
+
+    @StringSetter(SEASON)
+    public void setSeason(String s) {
+        if (s == null) { this.season = Season.SUMMER; return; }
+
+        String v = s.trim().toUpperCase();
+        if (v.equals("FALL")) v = "AUTUMN";
+
+        try {
+            this.season = Season.valueOf(v);
+        } catch (Exception e) {
+            log.warn("Invalid season='" + s + "'. Falling back to SUMMER.");
+            this.season = Season.SUMMER;
+        }
+    }
+
+    @StringGetter(PV_VEHICLES_FILE)
+    public String getPvVehiclesFile() {
+        return pvVehiclesFile;
+    }
+
+    @StringSetter(PV_VEHICLES_FILE)
+    public void setPvVehiclesFile(String v) {
+        this.pvVehiclesFile = (v == null) ? "" : v.trim();
+    }
+
+    @StringGetter(PV_PARKED_OPEN_SHARE)
+    public double getPvParkedOpenShare() {
+        return pvParkedOpenShare;
+    }
+
+    @StringSetter(PV_PARKED_OPEN_SHARE)
+    public void setPvParkedOpenShare(double v) {
+        if (!Double.isFinite(v)) {
+            log.warn("UrbanEVConfigGroup: pvParkedOpenShare not finite (" + v + "), using 0.5.");
+            this.pvParkedOpenShare = 0.5;
+            return;
+        }
+        this.pvParkedOpenShare = Math.max(0.0, Math.min(1.0, v));
+    }
+
+    @StringGetter(PV_SHARE)
+    public double getPvShare() {
+        return pvShare;
+    }
+
+    @StringSetter(PV_SHARE)
+    public void setPvShare(double v) {
+        if (!Double.isFinite(v)) {
+            log.warn("UrbanEVConfigGroup: pvShare not finite (" + v + "), using 0.0.");
+            this.pvShare = 0.0;
+            return;
+        }
+        this.pvShare = Math.max(0.0, Math.min(1.0, v));
+    }
+
+    @StringGetter(PV_WP)
+    public double getPvWp() {
+        return pvWp;
+    }
+
+    @StringSetter(PV_WP)
+    public void setPvWp(double v) {
+        if (!Double.isFinite(v)) {
+            log.warn("UrbanEVConfigGroup: pvWp not finite (" + v + "), using 0.0.");
+            this.pvWp = 0.0;
+            return;
+        }
+        this.pvWp = Math.max(0.0, v);
+    }
+
     public void logIfSuspicious() {
         if (betaMoney > 0.0) {
             log.warn("UrbanEVConfigGroup: betaMoney > 0.0 detected (" + betaMoney + "). "
@@ -485,6 +589,13 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         if (homeChargingCost < 0.0 || workChargingCost < 0.0 || publicChargingCost < 0.0) {
             log.error("UrbanEVConfigGroup: negative charging cost detected. "
                     + "Please check home/work/publicChargingCost in config.xml.");
+        }
+
+        if (pvShare > 0.0 && pvWp <= 0.0) {
+            log.warn("UrbanEVConfigGroup: pvShare>0 but pvWp<=0; PV will have no effect.");
+        }
+        if (pvVehiclesFile != null && !pvVehiclesFile.trim().isEmpty() && pvShare > 0.0) {
+            log.info("UrbanEVConfigGroup: pvVehiclesFile is set; pvShare is only a fallback if CSV load fails.");
         }
     }
 }
