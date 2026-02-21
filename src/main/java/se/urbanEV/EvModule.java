@@ -33,6 +33,7 @@ import se.urbanEV.charging.ChargingModule;
 import se.urbanEV.discharging.DischargingModule;
 import se.urbanEV.fleet.ElectricFleetModule;
 import se.urbanEV.infrastructure.ChargingInfrastructureModule;
+import se.urbanEV.pv.PvModule;
 import se.urbanEV.stats.EvStatsModule;
 import org.matsim.core.controler.AbstractModule;
 
@@ -49,5 +50,6 @@ public class EvModule extends AbstractModule {
 		install(new ChargingModule());
 		install(new DischargingModule());
 		install(new EvStatsModule());
+		install(new PvModule());                            // (Developed: OmkarP.2026)
 	}
 }
