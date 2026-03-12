@@ -14,13 +14,13 @@
         <param name="parkingSearchRadius" value="500"/>
         <param name="defaultRangeAnxietyThreshold" value="0.2"/>
         <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-        <param name="rangeAnxietyUtility" value="-10"/>
-        <param name="emptyBatteryUtility" value="-30"/>
+        <param name="rangeAnxietyUtility" value="-6"/>
+        <param name="emptyBatteryUtility" value="-12"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-15"/>
+        <param name="socDifferenceUtility" value="-4"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
-        <param name="timeAdjustmentProbability" value="0.1"/>
+        <param name="timeAdjustmentProbability" value="0.15"/>
         <param name="maxTimeFlexibility" value="600"/>
         <param name="generateHomeChargersByPercentage" value="false"/>
         <param name="homeChargerPercentage" value="80"/>
@@ -33,12 +33,18 @@
         <param name="homeChargingCost" value="2.5"/>
         <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
-        <param name="betaMoney" value="-0.05"/>            <!--- VoT ~100 SEK/hr; Remove Cost - 0.0 -->
-        <param name="alphaScaleCost" value="1.0"/>         <!-- scaling param Cost -->
+        <param name="betaMoney" value="-0.08"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
+        <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="1.0"/>
-        <param name="awarenessFactor" value="0.7"/>
-        <param name="coincidenceFactor" value="0.3"/>
+        <param name="alphaScaleTemporal" value="0.25"/>
+        <param name="awarenessFactor" value="0.3"/>
+        <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
+
+        <param name="season" value="SUMMER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
+        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/pv_vehicles10pct.csv"/>
+        <param name="pvParkedOpenShare" value="0"/>    <!-- 50% parked instances will generate PV energy -->
+        <param name="pvShare" value="0"/>
+        <param name="pvWp" value="0.0"/>         <!-- to disable PV, set this to 0; default 400 -->
     </module>
 
     <module name="global">
@@ -57,22 +63,15 @@
         <param name="inputPlansFile" value="10pct/GOTplans_10pct7Days.xml.gz"/>
     </module>
 
-    <module name="transit">
-        <param name="useTransit" value="false" />
-        <param name="transitScheduleFile" value="transitSchedule.xml.gz" />
-        <param name="vehiclesFile" value="outputVehiclesFile.xml" />
-        <param name="transitModes" value="pt" />
-    </module>
-
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/03_Smart_172hrs" />
+        <param name="outputDirectory" value="output/10pct/030_Sm_noPVsummer" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="60"/>
+        <param name="lastIteration" value="80"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
-        <param name="writeEventsInterval" value="50"/>
-        <param name="writePlansInterval" value="50"/>
+        <param name="writeEventsInterval" value="5"/>
+        <param name="writePlansInterval" value="5"/>
         <param name="routingAlgorithmType" value="FastAStarLandmarks" />
         <param name="createGraphs" value="true"/>
         <param name="writeTripsInterval" value="1"/>
@@ -80,14 +79,14 @@
 
     <module name="qsim">
         <param name="startTime" value="00:00:00"/>
-        <param name="endTime" value="172:00:00"/>
-        <param name="flowCapacityFactor" value="0.1" />
-        <param name="storageCapacityFactor" value="0.1" />
+        <param name="endTime" value="168:00:00"/>
+        <param name="flowCapacityFactor" value="0.85"/>
+        <param name="storageCapacityFactor" value="0.9"/>
         <param name="snapshotperiod" value="01:00:00"/>
     </module>
 
     <module name="planCalcScore">
-        <param name="learningRate" value="1.0"/>
+        <param name="learningRate" value="0.4"/>
         <param name="BrainExpBeta" value="2.0"/>
         <param name="writeExperiencedPlans" value="false"/>
         <param name="usingOldScoringBelowZeroUtilityDuration" value="false"/>
@@ -203,7 +202,7 @@
                 <param name="typicalDurationScoreComputation" value="relative"/>
             </parameterset>
 
-            <!-- EV charging activity types created by UrbanEV -->
+            <!-- EV charging activity types created by UrbanEV- when clubbed with CN scoring -->
             <parameterset type="activityParams">
                 <param name="activityType" value="home charging"/>
                 <param name="scoringThisActivityAtAll" value="false"/>
@@ -256,8 +255,8 @@
     </module>
 
     <module name= "strategy">
-        <!-- fraction of iterations where innovative strategies are switched off.  Something like 0.8 should be good. -->
-        <param name="fractionOfIterationsToDisableInnovation" value="0.8" />
+        <!-- fraction of iterations where innovative strategies are switched off -->
+        <param name="fractionOfIterationsToDisableInnovation" value="0.85" />
         <!-- maximum number of plans per agent.  ``0'' means ``infinity''. -->
         <param name="maxAgentPlanMemorySize" value="5" />
         <parameterset type= "strategysettings">

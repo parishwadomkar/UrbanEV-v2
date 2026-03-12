@@ -70,7 +70,7 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 			Id.create("4680502", ElectricVehicle.class),
 			Id.create("9430738", ElectricVehicle.class),
 			Id.create("4575456", ElectricVehicle.class),
-			Id.create("2067447", ElectricVehicle.class),
+			Id.create("1931224", ElectricVehicle.class),            //stable: 2067447
 			Id.create("5908847", ElectricVehicle.class),
 			Id.create("1968395", ElectricVehicle.class),
 			Id.create("7326427", ElectricVehicle.class),
