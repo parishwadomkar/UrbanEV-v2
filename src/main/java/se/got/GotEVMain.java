@@ -20,6 +20,8 @@ import org.matsim.core.scoring.ScoringFunction;
 import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.scoring.SumScoringFunction;
 import java.io.IOException;
+import se.urbanEV.charging.ChargingCostUtils;
+import se.urbanEV.pv.PvPotentialUtils;
 
 public class GotEVMain {
     private static final Logger log = Logger.getLogger(se.got.GotEVMain.class);
@@ -129,6 +131,26 @@ public class GotEVMain {
             if (aware) {
                 awareCount++;
             }
+        }
+
+        if (urbanEvCfg != null) {
+            log.info("UrbanEV active season = " + urbanEvCfg.getSeason());
+
+            log.info(String.format(
+                    "Seasonal ToU check [%s]: h08=%.3f h12=%.3f h18=%.3f",
+                    urbanEvCfg.getSeason(),
+                    ChargingCostUtils.getHourlyCostMultiplier(8 * 3600.0, urbanEvCfg),
+                    ChargingCostUtils.getHourlyCostMultiplier(12 * 3600.0, urbanEvCfg),
+                    ChargingCostUtils.getHourlyCostMultiplier(18 * 3600.0, urbanEvCfg)
+            ));
+
+            log.info(String.format(
+                    "Seasonal PV check [%s]: h08=%.6f h12=%.6f h18=%.6f",
+                    urbanEvCfg.getSeason(),
+                    PvPotentialUtils.getPotentialFactor(8 * 3600.0, urbanEvCfg),
+                    PvPotentialUtils.getPotentialFactor(12 * 3600.0, urbanEvCfg),
+                    PvPotentialUtils.getPotentialFactor(18 * 3600.0, urbanEvCfg)
+            ));
         }
 
         log.info(String.format(

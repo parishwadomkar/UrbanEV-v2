@@ -63,7 +63,7 @@ public final class SmartChargingTouHelper {
             double cost = 0.0;
             for (double tt = t; tt < end - 1e-3; tt += STEP) {
                 double dt = Math.min(STEP, end - tt);
-                double m = ChargingCostUtils.getHourlyCostMultiplier(mod86400(tt));
+                double m = ChargingCostUtils.getHourlyCostMultiplier(mod86400(tt), cfg);
                 cost += m * dt;
             }
 

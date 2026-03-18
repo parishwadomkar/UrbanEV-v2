@@ -151,16 +151,16 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
                                 double dtSum = 0.0;
                                 for (double tt = tForPricing; tt < tEnd - 1e-6; tt += TOU_STEP_SEC) {
                                     double dt = Math.min(TOU_STEP_SEC, tEnd - tt);
-                                    double m = ChargingCostUtils.getHourlyCostMultiplier(tt);
+                                    double m = ChargingCostUtils.getHourlyCostMultiplier(tt, params.season);
                                     wSum += m * dt;
                                     dtSum += dt;
                                 }
-                                touMultiplier = (dtSum > 0.0) ? (wSum / dtSum) : ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                                touMultiplier = (dtSum > 0.0) ? (wSum / dtSum) : ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
                             } else {
-                                touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                                touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
                             }
                         } else {
-                            touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing);
+                            touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
                         }
                     }
 

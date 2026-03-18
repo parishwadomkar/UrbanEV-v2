@@ -42,18 +42,20 @@ public final class ChargingCostUtils {
     };
 
     /** Backward-compatible default: SUMMER if cfg is not provided. */
-    public static double getHourlyCostMultiplier(double timeSeconds) {
-        return getHourlyCostMultiplier(timeSeconds, null);
-    }
-
     public static double getHourlyCostMultiplier(double timeSeconds, UrbanEVConfigGroup cfg) {
-        int hour = hourOfDay(timeSeconds);
-
         UrbanEVConfigGroup.Season season =
                 (cfg != null && cfg.getSeason() != null) ? cfg.getSeason() : UrbanEVConfigGroup.Season.SUMMER;
+        return getHourlyCostMultiplier(timeSeconds, season);
+    }
+
+    public static double getHourlyCostMultiplier(double timeSeconds, UrbanEVConfigGroup.Season season) {
+        int hour = hourOfDay(timeSeconds);
+
+        UrbanEVConfigGroup.Season s =
+                (season != null) ? season : UrbanEVConfigGroup.Season.SUMMER;
 
         double m;
-        switch (season) {
+        switch (s) {
             case WINTER:
                 m = TOU_WINTER[hour];
                 break;
