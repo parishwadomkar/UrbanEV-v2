@@ -20,6 +20,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
     public final double publicChargingCost;
     public final double alphaScaleCost;   // cost scaling
     public final double defaultHomeChargerPower; // kW
+    public final UrbanEVConfigGroup.Season season;
 
     private ChargingBehaviourScoringParameters(
             final double marginalUtilityOfRangeAnxiety_soc,
@@ -33,7 +34,8 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             final double defaultHomeChargerPower,
             final double homeChargingCost,
             final double workChargingCost,
-            final double publicChargingCost) {
+            final double publicChargingCost,
+            final UrbanEVConfigGroup.Season season) {
         this.marginalUtilityOfRangeAnxiety_soc = marginalUtilityOfRangeAnxiety_soc;
         this.utilityOfEmptyBattery = utilityOfEmptyBattery;
         this.marginalUtilityOfWalking_m = marginalUtilityOfWalking_m;
@@ -46,6 +48,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
         this.homeChargingCost = homeChargingCost;
         this.workChargingCost = workChargingCost;
         this.publicChargingCost = publicChargingCost;
+        this.season = (season != null) ? season : UrbanEVConfigGroup.Season.SUMMER;
     }
 
     public static final class Builder {
@@ -61,6 +64,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
         private double homeChargingCost;
         private double workChargingCost;
         private double publicChargingCost;
+        private UrbanEVConfigGroup.Season season;
 
         public Builder(final Scenario scenario) {
             this((UrbanEVConfigGroup) scenario.getConfig().getModules().get(UrbanEVConfigGroup.GROUP_NAME));
@@ -81,6 +85,7 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
             workChargingCost = configGroup.getWorkChargingCost();
             publicChargingCost = configGroup.getPublicChargingCost();
             defaultHomeChargerPower = configGroup.getDefaultHomeChargerPower();
+            season = (configGroup.getSeason() != null) ? configGroup.getSeason() : UrbanEVConfigGroup.Season.SUMMER;
 
             if (!Double.isFinite(alphaScaleCost) || alphaScaleCost < 0.0) {
                 alphaScaleCost = 0.0;
@@ -103,7 +108,8 @@ public class ChargingBehaviourScoringParameters implements MatsimParameters {
                     defaultHomeChargerPower,
                     homeChargingCost,
                     workChargingCost,
-                    publicChargingCost
+                    publicChargingCost,
+                    season
             );
         }
     }
