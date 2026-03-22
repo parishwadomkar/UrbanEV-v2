@@ -36,11 +36,11 @@
         <param name="betaMoney" value="-0.08"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="0.35"/>
+        <param name="alphaScaleTemporal" value="0.25"/>
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
-        <param name="season" value="SPRING"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
+        <param name="season" value="SUMMER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
         <param name="pvVehiclesFile" value="scenarios/sweden/10pct/pv_vehicles10pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
         <param name="pvShare" value="0.5"/>
@@ -64,7 +64,7 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/032_Sm_PVspring" />
+        <param name="outputDirectory" value="output/10pct/032_Sm_PVsummer" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
         <param name="lastIteration" value="80"/>
