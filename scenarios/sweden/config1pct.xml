@@ -41,7 +41,7 @@
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
         <param name="season" value="WINTER"/>   <!--  { SUMMER, WINTER, AUTUMN, SPRING } -->
-        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/pv_vehicles10pct.csv"/>
+        <param name="pvVehiclesFile" value="scenarios/sweden/1pct/pv_vehicles1pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
         <param name="pvShare" value="0.5"/>
         <param name="pvWp" value="400.0"/>         <!-- to disable PV, set this to 0; default 400 -->
@@ -67,7 +67,7 @@
         <param name="outputDirectory" value="output/1pct/031SmartWinter_VIPV" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="2"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>
