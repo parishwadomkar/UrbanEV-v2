@@ -7,7 +7,7 @@
         <param name="chargeTimeStep" value="5"/>
         <param name="chargersFile" value="chargers.xml"/>
         <param name="timeProfiles" value="true"/>
-        <param name="vehiclesFile" value="10pct/evehicles10pct.xml"/>
+        <param name="vehiclesFile" value="10pct/evehicles10pct_80adopt.xml"/>
     </module>
 
     <module name="urban_ev">
@@ -36,12 +36,12 @@
         <param name="betaMoney" value="-0.08"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
         <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
-        <param name="alphaScaleTemporal" value="0.25"/>
+        <param name="alphaScaleTemporal" value="0.2"/>
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
         <param name="season" value="SUMMER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
-        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/pv_vehicles10pct.csv"/>
+        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/70VIPV_10pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
         <param name="pvShare" value="0.5"/>
         <param name="pvWp" value="400.0"/>           <!-- to disable PV, set this to 0; default 400 -->
@@ -64,7 +64,7 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/032_Sm_PVsummer" />
+        <param name="outputDirectory" value="output/10pct/70VIPV_PVsummer" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
         <param name="lastIteration" value="80"/>
