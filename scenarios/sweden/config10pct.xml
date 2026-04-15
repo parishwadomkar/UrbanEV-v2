@@ -56,18 +56,18 @@
     <module name="network">
         <param name="inputNetworkFile" value="got_network.xml.gz"/>
         <param name="timeVariantNetwork" value="false" />
-        <param name="inputChangeEventsFile" value="null" />
+        <param name="inputChangeEventsFile" value="null"/>
     </module>
 
     <module name="plans">
-        <param name="inputPlansFile" value="10pct/GOTplans_10pct7Days.xml.gz"/>
+        <param name="inputPlansFile" value="10pct/GOTplans_10pct7Days_EV80_attrs.xml.gz"/>
     </module>
 
     <module name="controler">
         <param name="outputDirectory" value="output/10pct/70VIPV_PVsummer" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="80"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>

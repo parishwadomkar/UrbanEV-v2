@@ -1,0 +1,17 @@
+80 percent adoption:
+
+EV persons found in plans: 16950
+EV persons with home charger access: 13560 (80.00%)
+EV persons with work charger access: 13560 (80.00%)
+EV persons with both home and work access: 10826 (63.87%)
+Output written to: C:/Users/omkarp/IdeaProjects/UrbanEV-v2/scenarios/sweden/10pct/GOTplans_10pct7Days_EV80_attrs.xml.gz
+
+Generated 16950 EVs (80%) out of 21188 car users.
+Assigned EV type counts:
+  VW_ID4: 3362
+  bmw_i3: 3430
+  Volvo: 3413
+  renault_zoe: 3370
+  tesla_model_Y: 3375
+
+----------------------------------------------
