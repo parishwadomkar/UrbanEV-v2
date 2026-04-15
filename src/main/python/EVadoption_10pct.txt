@@ -1,0 +1,22 @@
+80 percent adoption:
+
+Generated 16950 EVs out of 21188 car users.
+Assigned EV type counts:
+  VW_ID4: 3362
+  bmw_i3: 3430
+  Volvo: 3413
+  renault_zoe: 3370
+  tesla_model_Y: 3375
+
+----------------------------------------------
+
+30 percent adoption:
+
+Wrote EV file: C:\Users\omkarp\IdeaProjects\UrbanEV-v2\scenarios\sweden\10pct\evehicles10pct_30adopt.xml
+Generated 6356 EVs out of 21188 car users.
+Assigned EV type counts:
+  VW_ID4: 1304
+  bmw_i3: 1237
+  Volvo: 1261
+  renault_zoe: 1295
+  tesla_model_Y: 1259
