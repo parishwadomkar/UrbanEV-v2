@@ -1,0 +1,243 @@
+<?xml version="1.0" ?>
+<!DOCTYPE config SYSTEM "http://www.matsim.org/files/dtd/config_v2.dtd">
+<config>
+
+    <module name="ev">
+        <param name="auxDischargeTimeStep" value="60"/>
+        <param name="chargeTimeStep" value="15"/>
+        <param name="chargersFile" value="chargers_all_priced.xml"/>
+        <param name="analysisOutputs" value="TimeProfiles"/>
+        <param name="numberOfIndividualTimeProfiles" value="50"/>
+    </module>
+
+    <module name="vehicles">
+        <param name="vehiclesFile" value="1pct/vehicles_ev.xml.gz"/>
+    </module>
+
+    <module name="withinDayEv">
+        <param name="carMode" value="car"/>
+        <param name="walkMode" value="walk"/>
+        <param name="abortAgents" value="false"/>
+        <param name="maximumQueueTime" value="300.0"/>
+        <param name="allowSpoantaneousCharging" value="false"/>
+    </module>
+
+    <module name="strategic_charging">
+        <param name="minimumActivityChargingDuration" value="3600.0"/>
+        <param name="maximumActivityChargingDuration" value="86400.0"/>
+        <param name="minimumEnrouteDriveTime" value="3600.0"/>
+        <param name="minimumEnrouteChargingDuration" value="3600.0"/>
+        <param name="maximumEnrouteChargingDuration" value="3600.0"/>
+        <param name="activityBasedChargerSearchRadius" value="1000.0"/>
+        <param name="legBasedChargerSearchRadius" value="1000.0"/>
+        <param name="selectionProbability" value="0.0"/>
+        <param name="maximumChargingPlans" value="4"/>
+        <param name="chargingScoreWeight" value="0.0"/>
+        <param name="selectionStrategy" value="Exponential"/>
+        <param name="exponentialSelectionBeta" value="0.1"/>
+        <param name="onlineSearchStrategy" value="Naive"/>
+        <param name="useProactiveOnlineSearch" value="false"/>
+        <param name="scoreTrackingInterval" value="1"/>
+        <param name="maximumAlternatives" value="1"/>
+        <param name="alternativeCacheSize" value="-1"/>
+
+        <parameterset type="scoring">
+            <param name="cost" value="-1.0"/>
+            <param name="waitTime_min" value="-0.05"/>
+            <param name="detourTime_min" value="-0.5"/>
+            <param name="detourDistance_km" value="-0.2"/>
+            <param name="zeroSoc" value="-100.0"/>
+            <param name="failedChargingAttempt" value="-10.0"/>
+            <param name="failedChargingProcess" value="-100.0"/>
+            <param name="belowMinimumSoc" value="-12.0"/>
+            <param name="belowMinimumEndSoc" value="-16.0"/>
+        </parameterset>
+    </module>
+
+    <module name="global">
+        <param name="randomSeed" value="4711" />
+        <param name="coordinateSystem" value="EPSG:3006" />
+        <param name="numberOfThreads" value="1"/>
+    </module>
+
+    <module name="network">
+        <param name="inputNetworkFile" value="got_network.xml.gz"/>
+        <param name="timeVariantNetwork" value="false" />
+        <param name="inputChangeEventsFile" value="null" />
+    </module>
+
+    <module name="plans">
+        <param name="inputPlansFile" value="1pct/GOTplans_1pct7Days_sevc_behavior.xml.gz"/>
+    </module>
+
+    <module name="facilities">
+        <param name="inputFacilitiesFile" value="1pct/facilities_work.xml.gz"/>
+    </module>
+
+    <module name="controller">
+        <param name="outputDirectory" value="output/1pct/01_1pctRun" />
+        <param name="overwriteFiles" value="deleteDirectoryIfExists" />
+        <param name="firstIteration" value="0"/>
+        <param name="lastIteration" value="20"/>
+        <param name="eventsFileFormat" value="xml"/>
+        <param name="mobsim" value="qsim"/>
+        <param name="writeEventsInterval" value="1"/>
+        <param name="writePlansInterval" value="0"/>
+        <param name="routingAlgorithmType" value="SpeedyALT" />
+        <param name="createGraphsInterval" value="1"/>
+        <param name="writeTripsInterval" value="1"/>
+    </module>
+
+    <module name="qsim">
+        <param name="startTime" value="00:00:00"/>
+        <param name="endTime" value="72:00:00"/>
+        <param name="flowCapacityFactor" value="0.1"/>
+        <param name="storageCapacityFactor" value="0.1"/>
+        <param name="snapshotperiod" value="01:00:00"/>
+        <param name="vehiclesSource" value="fromVehiclesData"/>
+        <param name="usePersonIdForMissingVehicleId" value="false"/>
+        <param name="numberOfThreads" value="1"/>
+    </module>
+
+    <module name="gothenburg_pricing">
+        <param name="homeChargingCost" value="2.5"/>
+        <param name="workChargingCost" value="4.0"/>
+        <param name="publicChargingCost" value="5.5"/>
+        <param name="betaMoney" value="-0.05"/>
+        <param name="alphaScaleCost" value="1.0"/>
+        <param name="enableHomeTou" value="false"/>
+        <param name="homeTouMultipliers" value="0.7;06:00:00=1.6;08:00:00=1.47;10:00:00=0.92;17:00:00=1.14;20:00:00=1.0;22:00:00=0.7"/>
+    </module>
+
+    <module name="gothenburg_behavior">
+        <param name="defaultMinimumSoc" value="0.20"/>
+        <param name="defaultMinimumEndSoc" value="0.25"/>
+        <param name="defaultTargetSoc" value="0.80"/>
+        <param name="defaultMaximumSoc" value="0.80"/>
+        <param name="zeroSocPenalty" value="-100.0"/>
+        <param name="belowMinimumSocPenalty" value="-12.0"/>
+        <param name="belowMinimumEndSocPenalty" value="-16.0"/>
+        <param name="targetSocPenalty" value="-4.0"/>
+        <param name="chargingStartPenalty" value="-1.0"/>
+    </module>
+
+    <module name="scoring">
+        <param name="learningRate" value="0.5"/>
+        <param name="brainExpBeta" value="2.0"/>
+        <param name="writeExperiencedPlans" value="false"/>
+        <param name="usingOldScoringBelowZeroUtilityDuration" value="false"/>
+
+        <parameterset type="scoringParameters">
+            <!-- Applies to all agents (both nonCriticalSOC and criticalSOC) -->
+            <param name="subpopulation" value="null"/>
+            <!-- Core utility scale (keep consistent with EV betaMoney scale if you calibrate) -->
+            <param name="marginalUtilityOfMoney" value="1.0"/>
+
+            <!-- Time-related utilities (per hour) -->
+            <!-- performing: positive, time at activities is good -->
+            <param name="performing" value="6.0"/>
+            <!-- schedule delay: being late is costly, early departure usually 0 -->
+            <param name="lateArrival" value="-18.0"/>
+            <param name="earlyDeparture" value="0.0"/>
+            <!-- waiting: generic waiting 0, PT waiting penalized separately if needed -->
+            <param name="waiting" value="0.0"/>
+            <param name="waitingPt" value="-6.0"/>
+            <!-- small penalty for line switch in PT -->
+            <param name="utilityOfLineSwitch" value="-1.0"/>
+
+            <!--  Mode-specific utilities  -->
+            <!-- CAR -->
+            <parameterset type="modeParams">
+                <param name="mode" value="car"/>
+                <!-- ASC -->
+                <param name="constant" value="0.0"/>
+                <!-- distance utility (usually 0, distance cost via monetaryDistanceRate) -->
+                <param name="marginalUtilityOfDistance_util_m" value="0.0"/>
+                <!-- additional disutility of traveling on top of opportunity cost -->
+                <param name="marginalUtilityOfTraveling_util_hr" value="-6.0"/>
+                <!-- per-meter monetary cost; reduce to avoid double counting cost effects -->
+                <param name="monetaryDistanceRate" value="-0.00002"/>
+            </parameterset>
+
+            <!-- PT -->
+            <parameterset type="modeParams">
+                <param name="mode" value="pt"/>
+                <param name="constant" value="0.0"/>
+                <param name="marginalUtilityOfDistance_util_m" value="0.0"/>
+                <param name="marginalUtilityOfTraveling_util_hr" value="-6.0"/>
+                <!-- no distance-based PT fare here; you can add it if needed -->
+                <param name="monetaryDistanceRate" value="0.0"/>
+            </parameterset>
+
+            <!-- WALK -->
+            <parameterset type="modeParams">
+                <param name="mode" value="walk"/>
+                <param name="constant" value="0.0"/>
+                <param name="marginalUtilityOfDistance_util_m" value="0.0"/>
+                <param name="marginalUtilityOfTraveling_util_hr" value="-6.0"/>
+                <param name="monetaryDistanceRate" value="0.0"/>
+            </parameterset>
+
+            <!-- BIKE -->
+            <parameterset type="modeParams">
+                <param name="mode" value="bike"/>
+                <param name="constant" value="0.0"/>
+                <param name="marginalUtilityOfDistance_util_m" value="0.0"/>
+                <param name="marginalUtilityOfTraveling_util_hr" value="-6.0"/>
+                <param name="monetaryDistanceRate" value="0.0"/>
+            </parameterset>
+
+            <!--  Activity-specific parameters- “per-day typical durations” of each activity type  -->
+            <!-- HOME -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="home"/>
+                <param name="priority" value="1.0"/>
+                <!-- ~12h typical home duration per day -->
+                <param name="typicalDuration" value="12:00:00"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+
+            <!-- WORK -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="work"/>
+                <param name="priority" value="1.0"/>
+                <!-- standard 8h work day -->
+                <param name="typicalDuration" value="08:00:00"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+
+            <!-- SCHOOL -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="school"/>
+                <param name="priority" value="1.0"/>
+                <!-- slightly shorter than work -->
+                <param name="typicalDuration" value="07:00:00"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+
+            <!-- OTHER (shopping, leisure, etc.) -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="other"/>
+                <param name="priority" value="1.0"/>
+                <!-- more flexible shorter stay -->
+                <param name="typicalDuration" value="03:00:00"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+
+            <!-- interactions if you want to be explicit -->
+            <parameterset type="activityParams">
+                <param name="activityType" value="car interaction"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+            <parameterset type="activityParams">
+                <param name="activityType" value="pt interaction"/>
+                <param name="scoringThisActivityAtAll" value="false"/>
+                <param name="typicalDuration" value="00:00:01"/>
+                <param name="typicalDurationScoreComputation" value="relative"/>
+            </parameterset>
+        </parameterset>
+    </module>
+
+</config>

@@ -2,9 +2,19 @@
 <project version="4">
   <component name="RemoteRepositoriesConfiguration">
     <remote-repository>
+      <option name="id" value="topobyte" />
+      <option name="name" value="topobyte" />
+      <option name="url" value="https://mvn.topobyte.de" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Central Repository" />
       <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="osgeo" />
+      <option name="name" value="osgeo" />
+      <option name="url" value="https://repo.osgeo.org/repository/release/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="central" />
@@ -22,9 +32,24 @@
       <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="jogl" />
+      <option name="name" value="jogl" />
+      <option name="url" value="https://jogamp.org/deployment/maven/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="osgeo" />
       <option name="name" value="OSGeo Release Repository" />
       <option name="url" value="https://repo.osgeo.org/repository/release/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="matsim" />
+      <option name="name" value="matsim" />
+      <option name="url" value="https://repo.matsim.org/repository/matsim/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="slimjars" />
+      <option name="name" value="slimjars" />
+      <option name="url" value="https://mvn.slimjars.com" />
     </remote-repository>
   </component>
 </project>

@@ -1,93 +1,88 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>se.got</groupId>
-	<artifactId>urban_ev</artifactId>
-	<version>0.1</version>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>se.got</groupId>
+    <artifactId>urban_ev</artifactId>
+    <version>0.2.0-SNAPSHOT</version>
+    <name>UrbanEV-v2 (v2026)</name>
+
+    <parent>
+        <groupId>org.matsim</groupId>
+        <artifactId>matsim-all</artifactId>
+        <version>2026.0</version>
+    </parent>
 
     <properties>
-        <matsim.version>12.0</matsim.version>
-        <java.version>11</java.version>
-        <maven.compiler.release>11</maven.compiler.release>
+        <matsim.version>${project.parent.version}</matsim.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.release>25</maven.compiler.release>
+        <main.class>se.got.GotEVMain</main.class>
     </properties>
 
-	<repositories>
-		<repository>
-			<id>matsim</id>
-			<url>https://repo.matsim.org/repository/matsim</url>
-		</repository>
-		<repository>
-			<id>osgeo</id>
-			<name>OSGeo Release Repository</name>
-			<url>https://repo.osgeo.org/repository/release/</url>
-			<snapshots><enabled>false</enabled></snapshots>
-			<releases><enabled>true</enabled></releases>
-		</repository>
+    <repositories>
+        <repository>
+            <id>matsim</id>
+            <url>https://repo.matsim.org/repository/matsim/</url>
+        </repository>
+        <repository>
+            <id>osgeo</id>
+            <url>https://repo.osgeo.org/repository/release/</url>
+        </repository>
+        <repository>
+            <id>topobyte</id>
+            <url>https://mvn.topobyte.de</url>
+        </repository>
+        <repository>
+            <id>slimjars</id>
+            <url>https://mvn.slimjars.com</url>
+        </repository>
+    </repositories>
 
-	</repositories>
+    <dependencies>
+        <dependency>
+            <groupId>org.matsim</groupId>
+            <artifactId>matsim</artifactId>
+            <version>${matsim.version}</version>
+        </dependency>
 
-	<dependencies>
-		<dependency>
-			<!-- This is the matsim "core": -->
-			<groupId>org.matsim</groupId>
-			<artifactId>matsim</artifactId>
-			<version>${matsim.version}</version>
-		</dependency>
+        <dependency>
+            <groupId>org.matsim.contrib</groupId>
+            <artifactId>ev</artifactId>
+            <version>${matsim.version}</version>
+        </dependency>
+    </dependencies>
 
-		<!--ev contribution-->
-		<dependency>
-			<groupId>org.matsim.contrib</groupId>
-			<artifactId>ev</artifactId>
-			<version>${matsim.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.matsim.contrib</groupId>
-			<artifactId>dvrp</artifactId>
-			<version>${matsim.version}</version>
-		</dependency>
-
-		<!-- Include the JUnit testing library and MATSim test infrastructure if needed.
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.matsim</groupId>
-			<artifactId>matsim</artifactId>
-			<type>test-jar</type>
-			<version>${matsim.version}</version>
-			<scope>test</scope>
-		</dependency>
-		-->
-	</dependencies>
-
-	<build>
-		<plugins>
+    <build>
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>3.6.2</version>
                 <executions>
                     <execution>
-                        <id>enforce-java</id>
+                        <id>enforce-java-maven-and-releases</id>
                         <goals><goal>enforce</goal></goals>
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11,18)</version>
-                                    <message>This project should be built/run with JDK 17 (while compiling to --release 11 for MATSim 12).</message>
+                                    <version>[25,26)</version>
+                                    <message>This build targets MATSim 2026.0 and should be compiled with JDK 25.</message>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
-                                    <version>[3.9.0,4.0.0)</version>
+                                    <version>[3.8,4.0.0)</version>
                                 </requireMavenVersion>
-                                <requireReleaseDeps/>
+                                <requireReleaseDeps>
+                                    <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
+                                    <excludes>
+                                        <exclude>org.matsim:*</exclude>
+                                        <exclude>org.matsim.contrib:*</exclude>
+                                    </excludes>
+                                </requireReleaseDeps>
                             </rules>
                             <fail>true</fail>
                         </configuration>
@@ -98,7 +93,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.0</version>
+                <version>3.11.0</version>
                 <configuration>
                     <release>${maven.compiler.release}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
@@ -107,25 +102,38 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>se.got.GotEVMain</mainClass>
-                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
                         <phase>package</phase>
-                        <goals><goal>single</goal></goals>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
+
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${main.class}</mainClass>
+                                    <manifestEntries>
+                                        <Multi-Release>true</Multi-Release>
+                                    </manifestEntries>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
