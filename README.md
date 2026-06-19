@@ -193,7 +193,7 @@ This repository refers to the published research and methods described in:
 
 - **Parishwad, Omkar; Najafi, Arsalan; Gao, Kun** — *Joint optimization of charging infrastructure and renewable energies with battery storage considering user redirection incentives.*  (SSRN preprint, Aug 15, 2025).  
   *SSRN preprint:* https://doi.org/10.2139/ssrn.5395539
-  *LargeScaleOptimization codebase:* https://github.com/parishwadomkar/Optimization/tree/main/LargeScaleOptimization
+  *LargeScaleOptimization GitHub Project codebase:* [LargeScaleOptimization](https://github.com/parishwadomkar/Large-scale-LBBD-Optimization)
 
 - **Omkar Parishwad (PhD Thesis / Chalmers publication page)**  
   https://research.chalmers.se/publication/547894
