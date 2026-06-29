@@ -23,10 +23,10 @@ public class scenarios {
     // =========================
     // User parameters
     // =========================
-    private static final double EV_ADOPTION_PCT = 60.0;   // among car users in selected plans
+    private static final double EV_ADOPTION_PCT = 50.0;   // among car users in selected plans
     private static final double HOME_ACCESS_SHARE = 0.80; // among adopted EVs
     private static final double WORK_ACCESS_SHARE = 0.80; // among adopted EVs
-    private static final double VIPV_SHARE = 0.80;        // among adopted EVs
+    private static final double[] VIPV_SHARES = {0.20, 0.50, 0.80}; // among adopted EVs; generated as nested prefixes
 
     private static final String HOME_POWER = "7";
     private static final String WORK_POWER = "11";
@@ -37,10 +37,6 @@ public class scenarios {
 
     private static final double RANGE_MEAN = 0.25;
     private static final double RANGE_STD = 0.05; // truncated normal
-
-    private static final double PV_WP = 400.0;
-    private static final double PV_AREA_M2 = 2.0;
-    private static final double PV_EFF = 0.20;
 
     private static final long MASTER_SEED = 42L;
 
@@ -80,10 +76,8 @@ public class scenarios {
 
         Document plansDoc = parseXml(plansPath);
         Document baseEvDoc = parseXml(baseEvPath);
-
         List<Element> persons = getChildElementsByTag(plansDoc.getDocumentElement(), "person");
         int totalPersons = persons.size();
-
         Set<String> carUserIds = getCarUserIds(persons);
         List<String> candidateCarUsers = new ArrayList<>(carUserIds);
         Collections.sort(candidateCarUsers);
@@ -105,8 +99,6 @@ public class scenarios {
         int adoptCount = boundedCount(candidateCarUserCount, EV_ADOPTION_PCT / 100.0);
         int homeCountTarget = boundedCount(adoptCount, HOME_ACCESS_SHARE);
         int workCountTarget = boundedCount(adoptCount, WORK_ACCESS_SHARE);
-        int vipvCountTarget = boundedCount(adoptCount, VIPV_SHARE);
-
         Random adoptionRng = new Random(seedFor(sample.folderName, "adoption"));
         Random homeRng = new Random(seedFor(sample.folderName, "home"));
         Random workRng = new Random(seedFor(sample.folderName, "work"));
@@ -117,50 +109,63 @@ public class scenarios {
         Set<String> adoptedIds = sampleSet(candidateCarUsers, adoptCount, adoptionRng);
         List<String> adoptedIdList = new ArrayList<>(adoptedIds);
         Collections.sort(adoptedIdList);
-
         Set<String> homeIds = sampleSet(adoptedIdList, homeCountTarget, homeRng);
         Set<String> workIds = sampleSet(adoptedIdList, workCountTarget, workRng);
-        Set<String> vipvIds = sampleSet(adoptedIdList, vipvCountTarget, vipvRng);
 
+        // Nested VIPV adoption order: 20% is a subset of 50%, and 50% is a subset of 80%.
+        List<String> vipvOrder = new ArrayList<>(adoptedIdList);
+        Collections.shuffle(vipvOrder, vipvRng);
         int adoptPctInt = (int) Math.round(EV_ADOPTION_PCT);
-        int vipvPctInt = (int) Math.round(VIPV_SHARE * 100.0);
 
-        // 1) Build adopted EV file from adopted car-user ids
+        // adopted EV file from adopted car-user ids
         EvWriteStats evWriteStats = new EvWriteStats();
         Document adoptedEvDoc = buildAdoptedEvDocument(adoptedIdList, baseVehicleById, baseVehicleElements, templateRng, evWriteStats);
         Path outEvPath = sampleDir.resolve(String.format("evehicles%s_%dadopt.xml.gz", sample.folderName, adoptPctInt));
         writeXml(adoptedEvDoc, outEvPath, "http://matsim.org/files/dtd/electric_vehicles_v1.dtd");
 
-        // 2) Rewrite plans with EV-only attributes for adopted EVs
+        // plans with EV-only attributes for adopted EVs
         PlanWriteStats planStats = rewritePlans(plansDoc, adoptedIds, homeIds, workIds, rangeRng);
         Path outPlansPath = sampleDir.resolve(String.format("GOTplans_%s7Days_EV%d.xml.gz", sample.folderName, adoptPctInt));
         writeXml(plansDoc, outPlansPath, "http://www.matsim.org/files/dtd/population_v6.dtd");
 
-        // 3) Write VIPV CSV for adopted EV subset
-        Path outVipvCsv = sampleDir.resolve(String.format("%dVIPV_%s.csv", vipvPctInt, sample.folderName));
-        writeVipvCsv(outVipvCsv, vipvIds);
+        // nested VIPV CSV files for adopted EV subsets
+        Map<Integer, Integer> vipvCountsByPct = new LinkedHashMap<>();
+        Map<Integer, Path> vipvFilesByPct = new LinkedHashMap<>();
+        for (double vipvShare : VIPV_SHARES) {
+            int vipvCountTarget = boundedCount(adoptCount, vipvShare);
+            Set<String> vipvIds = prefixSet(vipvOrder, vipvCountTarget);
+            int vipvPctInt = (int) Math.round(vipvShare * 100.0);
+            Path outVipvCsv = sampleDir.resolve(String.format("%dVIPV_%s.csv", vipvPctInt, sample.folderName));
+            writeVipvCsv(outVipvCsv, vipvIds);
+            vipvCountsByPct.put(vipvPctInt, vipvIds.size());
+            vipvFilesByPct.put(vipvPctInt, outVipvCsv);
+        }
 
-        // 4) Print stats
         System.out.println("====================================================");
         System.out.println("Sample: " + sample.folderName);
         System.out.println("Base plans: " + plansPath);
         System.out.println("Base EV file: " + baseEvPath);
         System.out.println("Output plans: " + outPlansPath.getFileName());
         System.out.println("Output EV file: " + outEvPath.getFileName());
-        System.out.println("Output VIPV CSV: " + outVipvCsv.getFileName());
+        System.out.println("Output VIPV CSV files:");
+        for (Map.Entry<Integer, Path> e : vipvFilesByPct.entrySet()) {
+            System.out.println("  " + e.getKey() + "% VIPV: " + e.getValue().getFileName());
+        }
         System.out.println();
 
         System.out.println("Total persons in plans: " + totalPersons);
         System.out.println("Unique car users in selected plans: " + candidateCarUserCount);
         System.out.println("EV adoption target percent among car users: " + EV_ADOPTION_PCT + "%");
         System.out.println("Adopted EV count: " + adoptedIdList.size() + " (" + pct(adoptedIdList.size(), candidateCarUserCount) + "% of car users)");
-
         System.out.println("Base EV templates available: " + baseVehicleElements.size());
         System.out.println("Adopted EVs matched directly in base EV file: " + evWriteStats.directMatches);
         System.out.println("Adopted EVs synthesized from sampled templates: " + evWriteStats.syntheticCopies);
 
-        System.out.println("VIPV share among adopted EVs: " + (VIPV_SHARE * 100.0) + "%");
-        System.out.println("VIPV count: " + vipvIds.size() + " (" + pct(vipvIds.size(), adoptedIdList.size()) + "% of adopted EVs)");
+        System.out.println("VIPV shares among adopted EVs (nested prefixes):");
+        for (Map.Entry<Integer, Integer> e : vipvCountsByPct.entrySet()) {
+            System.out.println("  " + e.getKey() + "% VIPV count: " + e.getValue()
+                    + " (" + pct(e.getValue(), adoptedIdList.size()) + "% of adopted EVs)");
+        }
 
         System.out.println("Home access target share among adopted EVs: " + (HOME_ACCESS_SHARE * 100.0) + "%");
         System.out.println("Work access target share among adopted EVs: " + (WORK_ACCESS_SHARE * 100.0) + "%");
@@ -168,11 +173,9 @@ public class scenarios {
         System.out.println("Observed adopted EVs with work charger access: " + planStats.evWithWork + " (" + pct(planStats.evWithWork, planStats.adoptedEvPersons) + "%)");
         System.out.println("Observed adopted EVs with both: " + planStats.evWithBoth + " (" + pct(planStats.evWithBoth, planStats.adoptedEvPersons) + "%)");
         System.out.println("Observed adopted EVs with neither: " + planStats.evWithNeither + " (" + pct(planStats.evWithNeither, planStats.adoptedEvPersons) + "%)");
-
         System.out.println("Range anxiety assigned to adopted EVs:");
         System.out.println("  min = " + String.format(Locale.US, "%." + RANGE_DECIMALS + "f", planStats.minRangeAnxiety));
         System.out.println("  max = " + String.format(Locale.US, "%." + RANGE_DECIMALS + "f", planStats.maxRangeAnxiety));
-
         System.out.println("Persons updated as adopted EVs: " + planStats.adoptedEvPersons);
         System.out.println("Non-adopted persons cleaned of EV-specific attrs: " + planStats.nonEvCleaned);
         System.out.println("====================================================");
@@ -234,12 +237,9 @@ public class scenarios {
 
             stats.adoptedEvPersons++;
             Element attrsEl = getOrCreateAttributesElement(plansDoc, person);
-
             removeNamedAttributes(attrsEl, EV_ATTR_NAMES);
-
             double rangeVal = roundedTruncatedNormal(rangeRng, RANGE_MEAN, RANGE_STD, RANGE_MIN, RANGE_MAX, RANGE_DECIMALS);
             setAttribute(plansDoc, attrsEl, "rangeAnxietyThreshold", String.format(Locale.US, "%." + RANGE_DECIMALS + "f", rangeVal));
-
             boolean hasHome = homeIds.contains(pid);
             boolean hasWork = workIds.contains(pid);
 
@@ -315,7 +315,6 @@ public class scenarios {
 
     private static void writeVipvCsv(Path outputPath, Set<String> vipvIds) throws IOException {
         Files.createDirectories(outputPath.getParent());
-
         List<String> sorted = new ArrayList<>(vipvIds);
         sorted.sort(
                 Comparator.comparingLong((String s) -> {
@@ -328,10 +327,10 @@ public class scenarios {
         );
 
         try (BufferedWriter w = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
-            w.write("vehicle_id,pv_wp,pv_area_m2,pv_eff");
+            w.write("vehicle_id");
             w.newLine();
             for (String id : sorted) {
-                w.write(id + "," + PV_WP + "," + PV_AREA_M2 + "," + PV_EFF);
+                w.write(id);
                 w.newLine();
             }
         }
@@ -339,7 +338,6 @@ public class scenarios {
 
     private static void writeXml(Document doc, Path outputPath, String doctypeSystem) throws Exception {
         Files.createDirectories(outputPath.getParent());
-
         TransformerFactory tf = TransformerFactory.newInstance();
         try {
             tf.setAttribute("indent-number", 2);
@@ -375,7 +373,6 @@ public class scenarios {
         safeSetFeature(dbf, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         safeSetFeature(dbf, "http://xml.org/sax/features/external-general-entities", false);
         safeSetFeature(dbf, "http://xml.org/sax/features/external-parameter-entities", false);
-
         DocumentBuilder db = dbf.newDocumentBuilder();
         EntityResolver noOpResolver = (publicId, systemId) -> new InputSource(new StringReader(""));
         db.setEntityResolver(noOpResolver);
@@ -431,7 +428,6 @@ public class scenarios {
         int before = countAttributeElements(attrsEl);
         removeNamedAttributes(attrsEl, EV_ATTR_NAMES);
         int after = countAttributeElements(attrsEl);
-
         if (after == 0) {
             person.removeChild(attrsEl);
         }
@@ -500,6 +496,11 @@ public class scenarios {
         return new HashSet<>(copy.subList(0, k));
     }
 
+    private static Set<String> prefixSet(List<String> orderedIds, int n) {
+        int k = Math.max(0, Math.min(n, orderedIds.size()));
+        return new HashSet<>(orderedIds.subList(0, k));
+    }
+
     private static int boundedCount(int total, double share) {
         return Math.max(0, Math.min(total, (int) Math.round(total * share)));
     }
@@ -519,7 +520,6 @@ public class scenarios {
 
         if (value < min) value = min;
         if (value > max) value = max;
-
         double scale = Math.pow(10.0, decimals);
         return Math.round(value * scale) / scale;
     }

@@ -1,0 +1,69 @@
+====================================================
+Sample: 1pct
+Base plans: scenarios\sweden\1pct\GOTplans_1pct7Days.xml.gz
+Base EV file: scenarios\sweden\1pct\evehicles1pct.xml
+Output plans: GOTplans_1pct7Days_EV50.xml.gz
+Output EV file: evehicles1pct_50adopt.xml.gz
+Output VIPV CSV files:
+  20% VIPV: 20VIPV_1pct.csv
+  50% VIPV: 50VIPV_1pct.csv
+  80% VIPV: 80VIPV_1pct.csv
+
+Total persons in plans: 5225
+Unique car users in selected plans: 1960
+EV adoption target percent among car users: 50.0%
+Adopted EV count: 980 (50.00% of car users)
+Base EV templates available: 980
+Adopted EVs matched directly in base EV file: 508
+Adopted EVs synthesized from sampled templates: 472
+VIPV shares among adopted EVs (nested prefixes):
+  20% VIPV count: 196 (20.00% of adopted EVs)
+  50% VIPV count: 490 (50.00% of adopted EVs)
+  80% VIPV count: 784 (80.00% of adopted EVs)
+Home access target share among adopted EVs: 80.0%
+Work access target share among adopted EVs: 80.0%
+Observed adopted EVs with home charger access: 784 (80.00%)
+Observed adopted EVs with work charger access: 784 (80.00%)
+Observed adopted EVs with both: 630 (64.29%)
+Observed adopted EVs with neither: 42 (4.29%)
+Range anxiety assigned to adopted EVs:
+  min = 0.10
+  max = 0.38
+Persons updated as adopted EVs: 980
+Non-adopted persons cleaned of EV-specific attrs: 472
+====================================================
+
+====================================================
+Sample: 10pct
+Base plans: scenarios\sweden\10pct\GOTplans_10pct7Days.xml.gz
+Base EV file: scenarios\sweden\10pct\evehicles10pct.xml
+Output plans: GOTplans_10pct7Days_EV50.xml.gz
+Output EV file: evehicles10pct_50adopt.xml.gz
+Output VIPV CSV files:
+  20% VIPV: 20VIPV_10pct.csv
+  50% VIPV: 50VIPV_10pct.csv
+  80% VIPV: 80VIPV_10pct.csv
+
+Total persons in plans: 55355
+Unique car users in selected plans: 21188
+EV adoption target percent among car users: 50.0%
+Adopted EV count: 10594 (50.00% of car users)
+Base EV templates available: 10594
+Adopted EVs matched directly in base EV file: 5264
+Adopted EVs synthesized from sampled templates: 5330
+VIPV shares among adopted EVs (nested prefixes):
+  20% VIPV count: 2119 (20.00% of adopted EVs)
+  50% VIPV count: 5297 (50.00% of adopted EVs)
+  80% VIPV count: 8475 (80.00% of adopted EVs)
+Home access target share among adopted EVs: 80.0%
+Work access target share among adopted EVs: 80.0%
+Observed adopted EVs with home charger access: 8475 (80.00%)
+Observed adopted EVs with work charger access: 8475 (80.00%)
+Observed adopted EVs with both: 6793 (64.12%)
+Observed adopted EVs with neither: 437 (4.12%)
+Range anxiety assigned to adopted EVs:
+  min = 0.10
+  max = 0.39
+Persons updated as adopted EVs: 10594
+Non-adopted persons cleaned of EV-specific attrs: 5330
+====================================================
