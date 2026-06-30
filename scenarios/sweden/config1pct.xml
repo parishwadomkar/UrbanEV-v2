@@ -14,11 +14,11 @@
         <param name="parkingSearchRadius" value="500"/>
         <param name="defaultRangeAnxietyThreshold" value="0.2"/>
         <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-        <param name="rangeAnxietyUtility" value="-6"/>
+        <param name="rangeAnxietyUtility" value="-8"/>
         <param name="emptyBatteryUtility" value="-12"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-4"/>
+        <param name="socDifferenceUtility" value="-10"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
         <param name="timeAdjustmentProbability" value="0.2"/>
         <param name="maxTimeFlexibility" value="600"/>

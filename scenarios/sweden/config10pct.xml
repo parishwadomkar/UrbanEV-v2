@@ -14,13 +14,13 @@
         <param name="parkingSearchRadius" value="500"/>
         <param name="defaultRangeAnxietyThreshold" value="0.2"/>
         <param name="vehicleTypesFile" value="vehicletypes.xml"/>
-        <param name="rangeAnxietyUtility" value="-6"/>
+        <param name="rangeAnxietyUtility" value="-8"/>
         <param name="emptyBatteryUtility" value="-12"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-4"/>
+        <param name="socDifferenceUtility" value="-10"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
-        <param name="timeAdjustmentProbability" value="0.15"/>
+        <param name="timeAdjustmentProbability" value="0.2"/>
         <param name="maxTimeFlexibility" value="600"/>
         <param name="generateHomeChargersByPercentage" value="false"/>
         <param name="homeChargerPercentage" value="80"/>
@@ -40,11 +40,11 @@
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
-        <param name="season" value="SUMMER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
+        <param name="season" value="SPRING"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
         <param name="pvVehiclesFile" value="scenarios/sweden/10pct/50VIPV_10pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
-        <param name="pvShare" value="0.8"/>
-        <param name="pvWp" value="400.0"/>           <!-- to disable PV, set this to 0; default 400 -->
+        <param name="pvShare" value="0.0"/>
+        <param name="pvWp" value="0.0"/>           <!-- to disable PV, set this to 0; default 400 -->
     </module>
 
     <module name="global">
@@ -64,10 +64,10 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/80VIPV_summer" />
+        <param name="outputDirectory" value="output/10pct/noVIPV_spring" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="80"/>
+        <param name="lastIteration" value="60"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>

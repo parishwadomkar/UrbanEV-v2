@@ -16,7 +16,7 @@ import java.util.Random;
 public final class SmartChargingTouHelper {
 
     private static final Logger log = Logger.getLogger(SmartChargingTouHelper.class);
-    private static final double STEP = 5.0 * 60.0;             // 5 min
+    private static final double STEP = 15.0 * 60.0;             // 15 min
     private static final double MAX_SIGMA_SEC = 4.0 * 3600.0;  // max dispersion
     private static final double EPS_COST = 1e-6;               // tolerance
     private static final int LOW_START_MIN = 22 * 60;
