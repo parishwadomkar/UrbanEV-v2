@@ -67,7 +67,7 @@
         <param name="outputDirectory" value="output/1pct/031SmartWinter_VIPV" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="60"/>
+        <param name="lastIteration" value="80"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>
