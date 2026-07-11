@@ -43,8 +43,8 @@
         <param name="season" value="SPRING"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
         <param name="pvVehiclesFile" value="scenarios/sweden/10pct/50VIPV_10pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
-        <param name="pvShare" value="0.0"/>
-        <param name="pvWp" value="0.0"/>           <!-- to disable PV, set this to 0; default 400 -->
+        <param name="pvShare" value="0.50"/>
+        <param name="pvWp" value="400.0"/>           <!-- to disable PV, set this to 0; default 400 -->
     </module>
 
     <module name="global">
@@ -64,10 +64,10 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/noVIPV_spring" />
+        <param name="outputDirectory" value="output/10pct/VIPV50_Wp400_SPRING"/>
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="60"/>
+        <param name="lastIteration" value="70"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>
