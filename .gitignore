@@ -28,4 +28,6 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Store/output/
+/src/main/python/Opti/data/raw/
+/src/main/python/Opti/data/raw/**
