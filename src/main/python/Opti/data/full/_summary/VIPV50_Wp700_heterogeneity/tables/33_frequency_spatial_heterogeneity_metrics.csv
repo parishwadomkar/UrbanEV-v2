@@ -1,0 +1,5 @@
+Spatial_scope,Cells_total,Cells_with_nonzero_baseline,Mapped_frequency_reduction_pct,Pearson_baseline_vs_VIPV,Spearman_baseline_vs_VIPV,Cells_with_frequency_reduction,Cells_with_local_frequency_increase,Cells_reduction_ge_5pct,Cells_reduction_ge_10pct,Cells_reduction_ge_20pct,Top10pct_cells_share_of_positive_avoided_sessions_pct
+All charger contexts,587,577,7.395385026671375,0.9950375631056073,0.9936697295253828,399,174,317,228,86,45.18046164695058
+home,587,465,6.896112526304131,0.9919032584876717,0.9946450485665376,316,146,251,176,64,48.64916279320184
+work,587,364,11.175507688480142,0.982674511958985,0.9572913669077026,235,131,214,195,153,66.28784708855675
+public,587,469,6.922972877634575,0.9932544903501375,0.9887753032991083,298,168,250,195,113,56.41948032328725

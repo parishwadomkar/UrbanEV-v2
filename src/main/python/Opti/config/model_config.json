@@ -1,0 +1,73 @@
+{
+  "speed_car_kmh": 30.0,
+  "speed_walk_kmh": 6.0,
+  "value_time_sek_per_h": 80.0,
+  "max_redirection_distance_km": 1.5,
+  "arc_activity_threshold_kwh": 0.1,
+  "redir_min_kwh": 0.1,
+  "x_kwh_per_trip": 20.0,
+  "time_slots_per_day": 48,
+  "slot_hours": 0.5,
+  "rho_half_hours_per_hour": 2,
+  "parking_capacity_add": 15,
+  "home_charger_add": 5,
+  "penalty_per_kwh_slack": 18500.0,
+  "charger_resources": {"slow": 1,"medium": 5,"fast": 150},
+  "discount_rate": 0.06,
+  "asset_specs": {
+    "slow": {
+      "capex_sek": 25000.0,
+      "life_years": 10,
+      "fixed_om_fraction": 0.0
+    },
+    "medium": {
+      "capex_sek": 40000.0,
+      "life_years": 10,
+      "fixed_om_fraction": 0.0
+    },
+    "fast": {
+      "capex_sek": 350000.0,
+      "life_years": 10,
+      "fixed_om_fraction": 0.0
+    },
+    "PV": {
+      "capex_sek": 5000.0,
+      "life_years": 25,
+      "fixed_om_fraction": 0.0
+    },
+    "Batt": {
+      "capex_sek": 34000.0,
+      "life_years": 15,
+      "fixed_om_fraction": 0.0
+    }
+  },
+  "charger_capacity_kwh_per_slot": {
+    "home": 3.5,
+    "slow": 5.5,
+    "medium": 11.0,
+    "fast": 25.0
+  },
+  "charger_price_sek_per_kwh": {
+    "slow": 5.5,
+    "medium": 6.0,
+    "fast": 6.5
+  },
+  "battery_max_units_per_hex": 200,
+  "battery_cell_cap_kwh": 10.0,
+  "battery_power_kw": 5.0,
+  "battery_duration_h": 2.0,
+  "initial_soc_fraction": 0.1,
+  "soc_min_fraction": 0.1,
+  "soc_max_fraction": 0.9,
+  "eta_charge": 0.95,
+  "eta_discharge": 0.95,
+  "panel_kw": 0.5,
+  "pvgis_power_col": "500W_P",
+  "pvgis_power_unit": "W",
+  "pvgis_min_annual_kwh_per_kwp": 100.0,
+  "pvgis_max_annual_kwh_per_kwp": 2500.0,
+  "vat": 0.25,
+  "electricity_tax_sek_per_kwh": 0.375,
+  "grid_fee_sek_per_kwh": 0.45,
+  "retail_markup_sek_per_kwh": 0.02
+}

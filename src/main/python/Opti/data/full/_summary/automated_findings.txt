@@ -1,0 +1,7 @@
+1. All ten generated demand datasets have the expected rows and use a common HexID set.
+2. Annual external-demand reductions are monotonic with adoption and VIPV system size, and the fleet-capacity response is strongly systematic.
+3. 9/9 VIPV cases fall within the Karoui adverse-to-favorable passenger-car useful-energy range when stored/usable VIPV energy is used.
+4. Mean PV curtailment/full-SoC waste share across VIPV cases is 6.6%; this should be reported separately from stored useful energy.
+5. The avoided-to-stored behavioural capture ratio ranges from 0.88 to 1.20. This quantifies how onboard stored energy propagates into reduced plug-in charging demand.
+6. The largest modeled reduction is 34.55 GWh/year (16.6%) in VIPV80_Wp1000.
+7. noVIPV seasonal demand varies by 0.8%; larger VIPV cases should show more pronounced solar-driven seasonality.

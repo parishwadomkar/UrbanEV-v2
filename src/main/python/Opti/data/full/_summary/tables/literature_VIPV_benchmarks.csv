@@ -1,0 +1,4 @@
+Benchmark,System_Wp,Useful_energy_kWh_year,Specific_yield_kWh_kWp_year,Interpretation,Source
+Karoui adverse average-Europe case,312,46,147.43589743589743,Adverse useful-energy conditions; lower-end useful VIPV output,https://doi.org/10.3390/app13148373
+Karoui realistic Paris case,312,101,323.71794871794873,"30% shading, direct HV charging, average-Europe irradiance",https://doi.org/10.3390/app13148373
+Karoui favorable Malaga case,312,227,727.5641025641025,Favorable solar location and electrical architecture,https://doi.org/10.3390/app13148373

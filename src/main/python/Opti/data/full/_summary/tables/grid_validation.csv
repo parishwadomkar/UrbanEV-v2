@@ -1,0 +1,11 @@
+Scenario,Same_HexIDs,Same_Hex_count,Same_CRS
+noVIPV,True,True,True
+VIPV20_Wp400,True,True,True
+VIPV20_Wp700,True,True,True
+VIPV20_Wp1000,True,True,True
+VIPV50_Wp400,True,True,True
+VIPV50_Wp700,True,True,True
+VIPV50_Wp1000,True,True,True
+VIPV80_Wp400,True,True,True
+VIPV80_Wp700,True,True,True
+VIPV80_Wp1000,True,True,True

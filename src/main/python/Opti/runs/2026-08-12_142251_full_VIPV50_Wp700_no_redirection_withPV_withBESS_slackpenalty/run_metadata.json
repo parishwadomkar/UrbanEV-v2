@@ -1,0 +1,112 @@
+{
+  "computational_complexity": {
+    "preprocessing": {
+      "hex_cells": 587,
+      "representative_months": 12,
+      "time_slots_per_day": 48,
+      "month_slot_blocks": 576,
+      "public_charger_types": 3,
+      "demand_classes": 2,
+      "spatial_redirection_arcs": 1464,
+      "active_redirection_arc_slots": 425004,
+      "origin_slot_records": 181557,
+      "destination_slot_records": 181557,
+      "demand_event_records": 676224,
+      "battery_big_m_records": 587,
+      "type_pair_arc_slot_records": 3825036,
+      "arc_slots_average_per_month_slot": 737.8541666666666,
+      "arc_slots_median_per_month_slot": 886.0,
+      "arc_slots_p95_per_month_slot": 1082.0,
+      "arc_slots_max_per_month_slot": 1138
+    },
+    "phase_timing": {
+      "input_load_seconds": 1.4809963000006974,
+      "preprocessing_seconds": 2.7941238000057638,
+      "model_build_seconds": 131.5463952999562,
+      "solve_seconds": 458.1253764999565,
+      "export_seconds": 195.58146949997172,
+      "figure_generation_seconds": 10.868696300080046,
+      "total_runtime_seconds": 835.5444921001326
+    },
+    "resource_usage": {
+      "peak_process_tree_rss_MB": 21922.96484375,
+      "final_process_tree_rss_MB": 17669.3125
+    },
+    "model_statistics": {
+      "main_model": {
+        "variables_total": 11621047,
+        "variables_continuous": 10429992,
+        "variables_integer_nonbinary": 427939,
+        "variables_binary": 763116,
+        "variable_components": 18,
+        "constraints_active": 10474503,
+        "constraint_components": 28,
+        "objectives_active": 1
+      }
+    },
+    "solver_log_roles": [
+      {
+        "Method": "Monolithic",
+        "Model role": "main_model",
+        "Solver calls": 1,
+        "Max initial_rows": 10474503.0,
+        "Median initial_rows": 10474503.0,
+        "Max initial_columns": 6095996.0,
+        "Median initial_columns": 6095996.0,
+        "Max initial_nonzeros": 22399186.0,
+        "Median initial_nonzeros": 22399186.0,
+        "Max presolved_rows": 8026.0,
+        "Median presolved_rows": 8026.0,
+        "Max presolved_columns": 6800.0,
+        "Median presolved_columns": 6800.0,
+        "Max presolved_nonzeros": 25290.0,
+        "Median presolved_nonzeros": 25290.0,
+        "Max root_presolved_rows": 6544.0,
+        "Median root_presolved_rows": 6544.0,
+        "Max root_presolved_columns": 4634.0,
+        "Median root_presolved_columns": 4634.0,
+        "Max root_presolved_nonzeros": 19106.0,
+        "Median root_presolved_nonzeros": 19106.0,
+        "Max threads_used": 8.0,
+        "Median threads_used": 8.0,
+        "Total solver_seconds": 165.65,
+        "Total work_units": 485.02,
+        "Total nodes_explored": 1.0,
+        "Total simplex_iterations": 1634.0,
+        "Rows removed by presolve": 0.9992337583940737,
+        "Columns removed by presolve": 0.9988845137037492
+      },
+      {
+        "Method": "Monolithic",
+        "Model role": "other",
+        "Solver calls": 1,
+        "Max initial_rows": 10474503.0,
+        "Median initial_rows": 10474503.0,
+        "Max initial_columns": 6095996.0,
+        "Median initial_columns": 6095996.0,
+        "Max initial_nonzeros": 22399186.0,
+        "Median initial_nonzeros": 22399186.0,
+        "Max presolved_rows": 8026.0,
+        "Median presolved_rows": 8026.0,
+        "Max presolved_columns": 6800.0,
+        "Median presolved_columns": 6800.0,
+        "Max presolved_nonzeros": 25290.0,
+        "Median presolved_nonzeros": 25290.0,
+        "Max root_presolved_rows": 6544.0,
+        "Median root_presolved_rows": 6544.0,
+        "Max root_presolved_columns": 4634.0,
+        "Median root_presolved_columns": 4634.0,
+        "Max root_presolved_nonzeros": 19106.0,
+        "Median root_presolved_nonzeros": 19106.0,
+        "Max threads_used": 8.0,
+        "Median threads_used": 8.0,
+        "Total solver_seconds": 165.65,
+        "Total work_units": 485.02,
+        "Total nodes_explored": 1.0,
+        "Total simplex_iterations": 1634.0,
+        "Rows removed by presolve": 0.9992337583940737,
+        "Columns removed by presolve": 0.9988845137037492
+      }
+    ]
+  }
+}
