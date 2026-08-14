@@ -1,0 +1,13 @@
+{
+  "solver": "gurobi",
+  "tee": true,
+  "threads": 10,
+  "mip_gap": 0.01,
+  "time_limit_seconds": 96600,
+  "presolve": 2,
+  "numeric_focus": 2,
+  "heuristics": 0.1,
+  "cuts": 3,
+  "mip_focus": 1,
+  "nodefile_start_gb": 2.0
+}

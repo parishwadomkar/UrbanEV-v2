@@ -1,0 +1,5 @@
+Method,Model role,Aggregate arc-flow variables,Type-pair arc-flow variables,Arc activation binaries,Trip integer variables,Arc tail variables,Origin/destination marginal variables,Maximum type-pair variables in one slot,Notes
+Monolithic,Exact annual model,435756,3921804,435756,435756,435756,0,10422,All exact redirection and type-pair decisions are present simultaneously.
+Benders,Arc-witness master,435756,0,435756,435756,435756,1108062,10422,"Type-pair variables are reconstructed in slot LP subproblems, not stored in the master."
+LBBD,Embedded-relaxation master,435756,0,0,0,0,0,10422,The master retains continuous aggregate redirection; exact annual MIP and monthly logic oracles restore discrete/type-pair logic.
+LBBD,Exact annual certification oracle,435756,3921804,435756,435756,435756,0,10422,"Same exact redirection logic as the monolithic formulation, with investments fixed."

@@ -1,0 +1,8 @@
+Test,Passed,Values
+Demand decreases with Wp at 20% adoption,True,400 Wp=203.868 GWh; 700 Wp=202.405 GWh; 1000 Wp=200.060 GWh
+Demand decreases with Wp at 50% adoption,True,400 Wp=198.593 GWh; 700 Wp=192.673 GWh; 1000 Wp=186.801 GWh
+Demand decreases with Wp at 80% adoption,True,400 Wp=192.309 GWh; 700 Wp=183.390 GWh; 1000 Wp=174.038 GWh
+Demand decreases with adoption at 400 Wp,True,20%=203.868 GWh; 50%=198.593 GWh; 80%=192.309 GWh
+Demand decreases with adoption at 700 Wp,True,20%=202.405 GWh; 50%=192.673 GWh; 80%=183.390 GWh
+Demand decreases with adoption at 1000 Wp,True,20%=200.060 GWh; 50%=186.801 GWh; 80%=174.038 GWh
+Linear response to fleet-average nominal VIPV capacity,True,slope=0.04229 GWh per Wp/EV; intercept=1.106 GWh; R²=0.9933

@@ -1,0 +1,28 @@
+figure_group,status,files,message
+economic_breakdown,generated,01_economic_breakdown.png,
+charger_deployment,generated,02_charger_deployment_and_utilization.png,
+monthly_energy,generated,03_monthly_energy_supply_mix.png,
+input_pv_tou_profiles,generated,03a_input_pv_tou_profiles.png,
+seasonal_demand_profiles,generated,03b_seasonal_charging_demand_profiles.png,
+seasonal_supply_profiles,generated,03c_seasonal_energy_supply_profiles.png,
+dispatch_January,generated,04_dispatch_january.png,
+dispatch_April,generated,04_dispatch_april.png,
+dispatch_July,generated,04_dispatch_july.png,
+dispatch_October,generated,04_dispatch_october.png,
+bess_soc,generated,05_bess_soc_by_month.png,
+bess_operation_January,generated,06_bess_operation_january.png,
+bess_operation_July,generated,06_bess_operation_july.png,
+demand_supply_balance,generated,16_demand_supply_balance_annual_average.png,
+redirection_heatmap,skipped,,No positive redirection flows
+redirection_type_matrix,skipped,,No type-pair redirection reconstruction
+decomposition_convergence,skipped,,No decomposition iteration history
+decomposition_cut_generation,skipped,,No decomposition iteration history
+lbbd_cut_families,skipped,,No LBBD iteration history
+lbbd_candidate_bounds,skipped,,No LBBD iteration history
+lbbd_infrastructure_evolution,skipped,,No LBBD iteration history
+lbbd_iteration_timing,skipped,,No LBBD iteration history
+lbbd_gap_diagnostics,skipped,,No LBBD iteration history
+lbbd_adaptive_master_control,skipped,,No LBBD iteration history
+lbbd_candidate_reuse,skipped,,No LBBD iteration history
+slack,generated,10_slack_by_month.png,
+spatial_maps,generated,11_map_public_charging_capacity.png;12_map_pv_installation.png;13_map_bess_installation.png,

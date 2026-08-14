@@ -1,0 +1,58 @@
+# -----------------------------
+# Editor / OS files
+# -----------------------------
+.vscode/
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Python cache and environments
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# -----------------------------
+# Jupyter
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Temporary solver/intermediate files
+# Keep these ignored unless specifically needed.
+# -----------------------------
+*.lp
+*.mps
+*.mst
+*.sol
+
+# -----------------------------
+# Logs
+# Do not globally ignore *.log because runs/ should be publishable.
+# Ignore only temporary local logs if needed.
+# -----------------------------
+logs/tensorboard/
+logs/training_logs/
+!logs/.gitkeep
+
+# -----------------------------
+# Large temporary/raw video folders
+# -----------------------------
+outputs/videos/raw/
+
+# -----------------------------
+# Project artifacts intentionally allowed
+# -----------------------------
+!runs/
+!runs/**
+!data/
+!data/**
+!outputs/
+!outputs/**
+!models/
+!models/**

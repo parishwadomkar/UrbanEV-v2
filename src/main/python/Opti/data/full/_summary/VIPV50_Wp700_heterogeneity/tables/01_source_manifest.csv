@@ -1,0 +1,9 @@
+Scenario,Season,Path,Exists,Valid,Delimiter,MissingColumns
+noVIPV,SPRING,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\noVIPV_SPRING\ITERS\it.70\70.chargingStats.csv,True,True,;,
+noVIPV,SUMMER,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\noVIPV_SUMMER\ITERS\it.70\70.chargingStats.csv,True,True,;,
+noVIPV,AUTUMN,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\noVIPV_AUTUMN\ITERS\it.70\70.chargingStats.csv,True,True,;,
+noVIPV,WINTER,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\noVIPV_WINTER\ITERS\it.70\70.chargingStats.csv,True,True,;,
+VIPV50_Wp700,SPRING,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\VIPV50_Wp700_SPRING\ITERS\it.70\70.chargingStats.csv,True,True,;,
+VIPV50_Wp700,SUMMER,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\VIPV50_Wp700_SUMMER\ITERS\it.70\70.chargingStats.csv,True,True,;,
+VIPV50_Wp700,AUTUMN,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\VIPV50_Wp700_AUTUMN\ITERS\it.70\70.chargingStats.csv,True,True,;,
+VIPV50_Wp700,WINTER,C:\Users\omkarp\IdeaProjects\GotVIPV\output\10pct\VIPV50_Wp700_WINTER\ITERS\it.70\70.chargingStats.csv,True,True,;,
