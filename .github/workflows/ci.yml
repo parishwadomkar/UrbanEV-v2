@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install lightweight check dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pyyaml pytest
+
+      - name: Compile Python files
+        run: |
+          python -m compileall src src_benders src_lbbd
+
+      - name: Validate JSON config files
+        run: |
+          python -m json.tool config/model_config.json > /dev/null
+          python -m json.tool config/paths.json > /dev/null
+          python -m json.tool config/run_profiles.json > /dev/null
+          python -m json.tool config/solver_gurobi.json > /dev/null
+
+      - name: Validate YAML workflow files
+        run: |
+          python - <<'EOF'
+          import yaml
+          from pathlib import Path
+
+          for path in Path(".github/workflows").glob("*.yml"):
+              with open(path, "r", encoding="utf-8") as f:
+                  yaml.safe_load(f)
+              print(f"validated {path}")
+          EOF
+
+      - name: Lint critical syntax errors
+        run: |
+          flake8 src src_benders src_lbbd \
+            --count \
+            --select=E9,F63,F7,F82 \
+            --show-source \
+            --statistics
