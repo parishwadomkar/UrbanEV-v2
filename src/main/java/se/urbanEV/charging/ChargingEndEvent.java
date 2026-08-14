@@ -43,18 +43,40 @@ public class ChargingEndEvent extends Event {
 	public static final String ATTRIBUTE_VEHICLE = "vehicle";
 	public static final String ATTRIBUTE_ENDSOC = "soc";
 	public static final String ATTRIBUTE_CHARGINGDUR = "charging_duration";
+	public static final String ATTRIBUTE_GRIDENERGY = "grid_energy_J";   //OmkarP.(2026)
 
 	private final Id<Charger> chargerId;
 	private final Id<ElectricVehicle> vehicleId;
 	private final Double soc;
 	private final Double charging_duration;
+	private final Double gridEnergy_J;
 
 	public ChargingEndEvent(double time, Id<Charger> chargerId, Id<ElectricVehicle> vehicleId, double soc, double charging_duration) {
+
+		this(
+				time,
+				chargerId,
+				vehicleId,
+				soc,
+				charging_duration,
+				0.0
+		);
+	}
+
+	public ChargingEndEvent(
+			double time,
+			Id<Charger> chargerId,
+			Id<ElectricVehicle> vehicleId,
+			double soc,
+			double charging_duration,
+			double gridEnergy_J) {
+
 		super(time);
 		this.chargerId = chargerId;
 		this.vehicleId = vehicleId;
 		this.soc = soc;
 		this.charging_duration = charging_duration;
+		this.gridEnergy_J = gridEnergy_J;
 	}
 
 	public Id<Charger> getChargerId() {
@@ -68,6 +90,8 @@ public class ChargingEndEvent extends Event {
 	public Double getCharging_duration() {
 		return charging_duration;
 	}
+
+	public Double getGridEnergy_J() { return gridEnergy_J;}
 
 	@Override
 	public String getEventType() {
@@ -85,6 +109,7 @@ public class ChargingEndEvent extends Event {
 		attr.put(ATTRIBUTE_VEHICLE, vehicleId.toString());
 		attr.put(ATTRIBUTE_ENDSOC, soc.toString());
 		attr.put(ATTRIBUTE_CHARGINGDUR, charging_duration.toString());
+		attr.put(ATTRIBUTE_GRIDENERGY, gridEnergy_J.toString());
 		return attr;
 	}
 }

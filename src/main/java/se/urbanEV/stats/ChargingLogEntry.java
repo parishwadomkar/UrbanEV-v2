@@ -59,42 +59,97 @@ public class ChargingLogEntry {
     private double transmittedEnergy_J;
     private boolean transmittedEnergy_JSet;
 
+    private String chargerAccessType;
+    private boolean chargerAccessTypeSet = false;
+
+    private double basePricePerKWh;
+    private boolean basePricePerKWhSet = false;
+
+    private double averageTouMultiplier;
+    private boolean averageTouMultiplierSet = false;
+
+    private double effectivePricePerKWh;
+    private boolean effectivePricePerKWhSet = false;
+
+    private double chargingCost;
+    private boolean chargingCostSet = false;
+
     public ChargingLogEntry(Id<ElectricVehicle> vehicle) {
 
         this.electricVehicleId = vehicle;
 
     }
 
-    public boolean complete(){
-        if(     startTimeSet&&
-                endTimeSet&&
-                startSOCSet&&
-                endSOCSet&&
-                walkingDistanceSet&&
-                chargingDurationSet&&
-                unplugTimeSet&&
-                pluggedDurationSet&&
-                chargingRatioSet &&
-                chargerSet &&
-                transmittedEnergy_JSet &&
-                startSOC_JSet &&
-                endSOC_JSet
-        ){
-            return true;
-        }
-        else{
-            return false;
-        }
+    public boolean complete() {
+        return startTimeSet
+                && endTimeSet
+                && startSOCSet
+                && endSOCSet
+                && walkingDistanceSet
+                && chargingDurationSet
+                && unplugTimeSet
+                && pluggedDurationSet
+                && chargingRatioSet
+                && chargerSet
+                && transmittedEnergy_JSet
+                && startSOC_JSet
+                && endSOC_JSet
+                && chargerAccessTypeSet
+                && basePricePerKWhSet
+                && averageTouMultiplierSet
+                && effectivePricePerKWhSet
+                && chargingCostSet;
     }
 
-    public boolean valid(){
+    public boolean valid() {
 
-        if(endTime<startTime || endSOC_J<startSOC_J || walkingDistance<0 || endTime-startTime!=chargingDuration || unplugTime<endTime || pluggedDuration!=unplugTime-startTime || transmittedEnergy_J!=endSOC_J-startSOC_J)
-        {
+        final double eps = 1e-6;
+
+        if (!Double.isFinite(startTime)
+                || !Double.isFinite(endTime)
+                || !Double.isFinite(chargingDuration)
+                || !Double.isFinite(pluggedDuration)
+                || !Double.isFinite(transmittedEnergy_J)
+                || !Double.isFinite(chargingCost)) {
             return false;
         }
-        else return true;
 
+        if (endTime + eps < startTime) {
+            return false;
+        }
+
+        if (endSOC_J + eps < startSOC_J) {
+            return false;
+        }
+
+        if (walkingDistance < -eps) {
+            return false;
+        }
+
+        if (Math.abs((endTime - startTime) - chargingDuration) > eps) {
+            return false;
+        }
+
+        if (unplugTime + eps < endTime) {
+            return false;
+        }
+
+        if (Math.abs((unplugTime - startTime) - pluggedDuration) > eps) {
+            return false;
+        }
+
+        if (transmittedEnergy_J < -eps) {
+            return false;
+        }
+
+        if (basePricePerKWh < -eps
+                || averageTouMultiplier < -eps
+                || effectivePricePerKWh < -eps
+                || chargingCost < -eps) {
+            return false;
+        }
+
+        return true;
     }
 
     public double getStartSOC_J() {
@@ -122,6 +177,51 @@ public class ChargingLogEntry {
     public void setTransmittedEnergy_J(double transmittedEnergy_J) {
         this.transmittedEnergy_J = transmittedEnergy_J;
         this.transmittedEnergy_JSet = true;
+    }
+
+    public String getChargerAccessType() {
+        return chargerAccessType;
+    }
+
+    public void setChargerAccessType(String chargerAccessType) {
+        this.chargerAccessType = chargerAccessType;
+        this.chargerAccessTypeSet = true;
+    }
+
+    public double getBasePricePerKWh() {
+        return basePricePerKWh;
+    }
+
+    public void setBasePricePerKWh(double basePricePerKWh) {
+        this.basePricePerKWh = basePricePerKWh;
+        this.basePricePerKWhSet = true;
+    }
+
+    public double getAverageTouMultiplier() {
+        return averageTouMultiplier;
+    }
+
+    public void setAverageTouMultiplier(double averageTouMultiplier) {
+        this.averageTouMultiplier = averageTouMultiplier;
+        this.averageTouMultiplierSet = true;
+    }
+
+    public double getEffectivePricePerKWh() {
+        return effectivePricePerKWh;
+    }
+
+    public void setEffectivePricePerKWh(double effectivePricePerKWh) {
+        this.effectivePricePerKWh = effectivePricePerKWh;
+        this.effectivePricePerKWhSet = true;
+    }
+
+    public double getChargingCost() {
+        return chargingCost;
+    }
+
+    public void setChargingCost(double chargingCost) {
+        this.chargingCost = chargingCost;
+        this.chargingCostSet = true;
     }
 
     public Id<ElectricVehicle> getElectricVehicleId() {

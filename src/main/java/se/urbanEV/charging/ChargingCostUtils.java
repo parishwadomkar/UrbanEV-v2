@@ -75,6 +75,182 @@ public final class ChargingCostUtils {
         return Math.max(0.0, m);
     }
 
+    public static String getChargerAccessType(String chargerId) {
+        if (chargerId == null) {
+            return "other";
+        }
+
+        String id = chargerId.toLowerCase(java.util.Locale.ROOT);
+
+        if (id.contains("home")) {
+            return "home";
+        }
+
+        if (id.contains("work")) {
+            return "work";
+        }
+
+        if (id.contains("public")) {
+            return "public";
+        }
+
+        return "other";
+    }
+
+    public static double getBasePricePerKWh(
+            String chargerAccessType,
+            UrbanEVConfigGroup cfg) {
+
+        if (cfg == null || chargerAccessType == null) {
+            return 0.0;
+        }
+
+        switch (chargerAccessType.toLowerCase(java.util.Locale.ROOT)) {
+            case "home":
+                return Math.max(0.0, cfg.getHomeChargingCost());
+
+            case "work":
+                return Math.max(0.0, cfg.getWorkChargingCost());
+
+            case "public":
+                return Math.max(0.0, cfg.getPublicChargingCost());
+
+            default:
+                return 0.0;
+        }
+    }
+
+    /**
+     * Integral of the applicable ToU multiplier over an active charging interval.
+     *
+     * Units: multiplier-seconds.
+     *
+     * Home charging uses the configured seasonal ToU profile.
+     * Work/public/other charging is treated as temporally flat.
+     */
+    public static double integrateTouMultiplierSeconds(double startTime, double endTime, String chargerAccessType, UrbanEVConfigGroup cfg) {
+
+        if (!Double.isFinite(startTime)
+                || !Double.isFinite(endTime)
+                || endTime <= startTime) {
+            return 0.0;
+        }
+
+        if (!"home".equalsIgnoreCase(chargerAccessType)) {
+            return endTime - startTime;
+        }
+
+        double weightedSeconds = 0.0;
+        double t = startTime;
+
+        while (t < endTime - 1e-9) {
+
+            double nextHourBoundary =
+                    (Math.floor(t / 3600.0) + 1.0) * 3600.0;
+
+            double intervalEnd =
+                    Math.min(endTime, nextHourBoundary);
+
+            double dt = intervalEnd - t;
+
+            if (dt <= 0.0) {
+                t += 1e-6;
+                continue;
+            }
+
+            double multiplier =
+                    getHourlyCostMultiplier(t, cfg);
+
+            weightedSeconds += multiplier * dt;
+            t = intervalEnd;
+        }
+
+        return weightedSeconds;
+    }
+
+    public static double getAverageTouMultiplier(double startTime, double endTime, String chargerAccessType, UrbanEVConfigGroup cfg) {
+
+        if (!"home".equalsIgnoreCase(chargerAccessType)) {
+            return 1.0;
+        }
+
+        double duration = endTime - startTime;
+
+        if (!Double.isFinite(duration) || duration <= 0.0) {
+            return getHourlyCostMultiplier(startTime, cfg);
+        }
+
+        double weightedSeconds =
+                integrateTouMultiplierSeconds(
+                        startTime,
+                        endTime,
+                        chargerAccessType,
+                        cfg
+                );
+
+        return weightedSeconds / duration;
+    }
+
+    public static double getEffectivePricePerKWh(double startTime, double endTime, String chargerAccessType, UrbanEVConfigGroup cfg) {
+
+        double basePrice =
+                getBasePricePerKWh(
+                        chargerAccessType,
+                        cfg
+                );
+
+        double avgMultiplier =
+                getAverageTouMultiplier(
+                        startTime,
+                        endTime,
+                        chargerAccessType,
+                        cfg
+                );
+
+        return basePrice * avgMultiplier;
+    }
+
+    public static double calculateChargingCost(
+            double energyKWh,
+            double startTime,
+            double endTime,
+            String chargerAccessType,
+            UrbanEVConfigGroup cfg) {
+
+        if (!Double.isFinite(energyKWh) || energyKWh <= 0.0) {
+            return 0.0;
+        }
+
+        double effectivePrice =
+                getEffectivePricePerKWh(
+                        startTime,
+                        endTime,
+                        chargerAccessType,
+                        cfg
+                );
+
+        return energyKWh * effectivePrice;
+    }
+
+    /*
+     * Backward-compatible overload for any existing caller using the previous parameter order.
+     */
+    public static double calculateChargingCost(
+            double energyKWh,
+            double startTime,
+            String chargerAccessType,
+            UrbanEVConfigGroup cfg,
+            double endTime) {
+
+        return calculateChargingCost(
+                energyKWh,
+                startTime,
+                endTime,
+                chargerAccessType,
+                cfg
+        );
+    }
+
     private static int hourOfDay(double timeSeconds) {
         int secOfDay = ((int) Math.floor(timeSeconds)) % 86400;
         if (secOfDay < 0) secOfDay += 86400;

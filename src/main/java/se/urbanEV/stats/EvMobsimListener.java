@@ -54,6 +54,8 @@ import java.util.Map;
 public class EvMobsimListener implements MobsimBeforeCleanupListener {
 
 	static private final int SECS_PER_DAY = 24*60*60;
+	private static double round3(double value) {return Math.round(value * 1000.0) / 1000.0;}
+	private static double round6(double value) {return Math.round(value * 1_000_000.0) / 1_000_000.0;}
 
 	@Inject
 	DriveDischargingHandler driveDischargingHandler;
@@ -112,7 +114,12 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 							"endSoc",
 							"endSoc_kWh",
 							"transmittedEnergy_kWh",
-							"walkingDistance"
+							"walkingDistance",
+							"chargerAccessType",
+							"basePrice_SEK_per_kWh",
+							"avgTouMultiplier",
+							"effectivePrice_SEK_per_kWh",
+							"chargingCost_SEK"
 					));
 
 			for (ChargingLogEntry e : chargerPowerCollector.getLogList()) {
@@ -137,11 +144,16 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 						Double.toString(e.getPluggedDuration()),
 						Double.toString(Math.round(e.getChargingRatio()*1000.0)/1000.0),
 						Double.toString(Math.round(e.getStartSOC()*1000.0)/1000.0),
-						Double.toString(Math.round(EvUnits.J_to_kWh(e.getStartSOC_J()*1000.0)/1000.0)),
+						Double.toString(round3(EvUnits.J_to_kWh(e.getStartSOC_J()))),
 						Double.toString(Math.round(e.getEndSOC()*1000.0)/1000.0),
-						Double.toString(Math.round(EvUnits.J_to_kWh(e.getEndSOC_J()*1000.0)/1000.0)),
-						Double.toString(Math.round(EvUnits.J_to_kWh(e.getTransmittedEnergy_J()*1000.0)/1000.0)),
-						Double.toString(Math.round(e.getWalkingDistance()*1000.0)/1000.0)
+						Double.toString(round3(EvUnits.J_to_kWh(e.getEndSOC_J()))),
+						Double.toString(round3(EvUnits.J_to_kWh(e.getTransmittedEnergy_J()))),
+						Double.toString(round3(e.getWalkingDistance())),
+						e.getChargerAccessType(),
+						Double.toString(round6(e.getBasePricePerKWh())),
+						Double.toString(round6(e.getAverageTouMultiplier())),
+						Double.toString(round6(e.getEffectivePricePerKWh())),
+						Double.toString(round6(e.getChargingCost()))
 						);
 			}
 
