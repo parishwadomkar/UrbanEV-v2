@@ -63,21 +63,23 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 		return new TimeProfileCollector(calc, 300, "individual_soc_time_profiles", matsimServices);
 	}
 
-//	Instead of plotting random EV soc profiles, we choose to output the same EV profiles for each iteration (OmkarP.2026)
+	//	Instead of plotting random EV soc profiles, we choose to output the same EV profiles for each iteration (OmkarP.2026)
 //	private static final List<Id<ElectricVehicle>> FIXED_EV_IDS = List.of(
-//			Id.create("7368354", ElectricVehicle.class),
-//			Id.create("9460181", ElectricVehicle.class),
-//			Id.create("4680502", ElectricVehicle.class),
+//			Id.create("4606454", ElectricVehicle.class),
+//			Id.create("7326174", ElectricVehicle.class),
+//			Id.create("4772272", ElectricVehicle.class),
 //			Id.create("9430738", ElectricVehicle.class),
-//			Id.create("4575456", ElectricVehicle.class),
-//			Id.create("1931224", ElectricVehicle.class),            //stable: 2067447
-//			Id.create("5908847", ElectricVehicle.class),
-//			Id.create("1968395", ElectricVehicle.class),
-//			Id.create("7326427", ElectricVehicle.class),
-//			Id.create("2017219", ElectricVehicle.class)
+//			Id.create("4661955", ElectricVehicle.class),
+//			Id.create("7379363", ElectricVehicle.class),
+//			Id.create("7298683", ElectricVehicle.class),
+//			Id.create("9460907", ElectricVehicle.class),
+//			Id.create("4923381", ElectricVehicle.class),
+//			Id.create("4604173", ElectricVehicle.class),
+//			Id.create("7442665", ElectricVehicle.class),
+//			Id.create("2129349", ElectricVehicle.class)
 //	);
-
-	//	public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
+//
+//		public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
 //		List<ElectricVehicle> selectedEvs = FIXED_EV_IDS.stream()
 //				.map(id -> evFleet.getElectricVehicles().get(id))
 //				.filter(Objects::nonNull)

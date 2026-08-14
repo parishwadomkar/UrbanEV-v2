@@ -47,6 +47,7 @@ public class EvStatsModule extends AbstractModule {
 	public void install() {
         if (evCfg.getTimeProfiles()) {
             addControlerListenerBinding().to(AggregatedDailyDemandProfilePlotter.class);
+            addControlerListenerBinding().to(ChargingCostAndTimeProfilePlotter.class);
         }
 
 		installQSimModule(new AbstractQSimModule() {

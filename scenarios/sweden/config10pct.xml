@@ -40,11 +40,11 @@
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
-        <param name="season" value="SPRING"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
-        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/50VIPV_10pct.csv"/>
+        <param name="season" value="WINTER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
+        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/80VIPV_10pct.csv"/>
         <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
-        <param name="pvShare" value="0.50"/>
-        <param name="pvWp" value="400.0"/>           <!-- to disable PV, set this to 0; default 400 -->
+        <param name="pvShare" value="0.80"/>
+        <param name="pvWp" value="700.0"/>           <!-- to disable PV, set this to 0; default 400 -->
     </module>
 
     <module name="global">
@@ -64,7 +64,7 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/VIPV50_Wp400_SPRING"/>
+        <param name="outputDirectory" value="output/10pct/VIPV80_Wp700_WINTER"/>
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
         <param name="lastIteration" value="70"/>

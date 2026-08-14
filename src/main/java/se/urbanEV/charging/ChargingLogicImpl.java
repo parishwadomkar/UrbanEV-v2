@@ -46,6 +46,10 @@ public class ChargingLogicImpl implements ChargingLogic {
 	private final Map<Id<ElectricVehicle>, ElectricVehicle> chargingVehicles = new LinkedHashMap<>();
 	private final Map<Id<ElectricVehicle>, ChargingListener> listeners = new LinkedHashMap<>();
 
+	// Actual energy accepted from the charger/grid during the active charging session [J].
+	// This is deliberately tracked separately from battery SoC change because rooftop PV may increase SoC simultaneously.
+	private final Map<Id<ElectricVehicle>, Double> gridEnergy_J = new LinkedHashMap<>();
+
 	public ChargingLogicImpl(Charger charger, ChargingStrategy chargingStrategy, EventsManager eventsManager) {
 		this.chargingStrategy = Objects.requireNonNull(chargingStrategy);
 		this.charger = Objects.requireNonNull(charger);
@@ -55,18 +59,46 @@ public class ChargingLogicImpl implements ChargingLogic {
 	@Override
 	public void chargeVehicles(double chargePeriod, double now) {
 		Iterator<ElectricVehicle> evIter = chargingVehicles.values().iterator();
+
 		while (evIter.hasNext()) {
 			ElectricVehicle ev = evIter.next();
-			ev.getBattery().changeSoc(ev.getChargingPower().calcChargingPower(charger) * chargePeriod);
+
+			double socBefore_J = ev.getBattery().getSoc();
+
+			double chargingPower_W = ev.getChargingPower().calcChargingPower(charger);
+			double requestedEnergy_J = chargingPower_W * chargePeriod;
+
+			ev.getBattery().changeSoc(requestedEnergy_J);
+
+			double socAfter_J = ev.getBattery().getSoc();
+
+			// Energy actually accepted from this charger call.
+			// BatteryImpl.changeSoc() already prevents charging above battery capacity.
+			double acceptedGridEnergy_J = Math.max(0.0, socAfter_J - socBefore_J);
+
+			gridEnergy_J.merge(
+					ev.getId(),
+					acceptedGridEnergy_J,
+					Double::sum
+			);
 
 			if (chargingStrategy.isChargingCompleted(ev)) {
+
+				double sessionGridEnergy_J =
+						gridEnergy_J.getOrDefault(ev.getId(), 0.0);
+
 				eventsManager.processEvent(
 						new ChargingEndEvent(
 								now,
 								charger.getId(),
 								ev.getId(),
-								ev.getBattery().getSoc()/ ev.getBattery().getCapacity(),
-								now-plugInTimestamps.get(ev.getId())));
+								ev.getBattery().getSoc() / ev.getBattery().getCapacity(),
+								now - plugInTimestamps.get(ev.getId()),
+								sessionGridEnergy_J
+						)
+				);
+
+				gridEnergy_J.remove(ev.getId());
 				evIter.remove();
 			}
 		}
@@ -89,13 +121,19 @@ public class ChargingLogicImpl implements ChargingLogic {
 	public void removeVehicle(ElectricVehicle ev, double now) {
 		if (pluggedVehicles.remove(ev.getId()) != null) { // successfully removed
 			if (chargingVehicles.remove(ev.getId()) != null) {
+				double sessionGridEnergy_J = gridEnergy_J.getOrDefault(ev.getId(), 0.0);
+
 				eventsManager.processEvent(
 						new ChargingEndEvent(
 								now,
 								charger.getId(),
 								ev.getId(),
-								ev.getBattery().getSoc()/ ev.getBattery().getCapacity(),
-								now-plugInTimestamps.get(ev.getId())));
+								ev.getBattery().getSoc() / ev.getBattery().getCapacity(),
+								now - plugInTimestamps.get(ev.getId()),
+								sessionGridEnergy_J
+						)
+				);
+				gridEnergy_J.remove(ev.getId());
 			}
 			eventsManager.processEvent(new UnpluggingEvent(now, charger.getId(), ev.getId(), now-plugInTimestamps.get(ev.getId())));
 			listeners.remove(ev.getId()).notifyChargingEnded(ev, now);
@@ -113,7 +151,15 @@ public class ChargingLogicImpl implements ChargingLogic {
 		if (chargingVehicles.put(ev.getId(), ev) != null) {
 			throw new IllegalArgumentException();
 		}
-		eventsManager.processEvent(new ChargingStartEvent(now, charger.getId(), ev.getId(), charger.getChargerType()));
+		gridEnergy_J.put(ev.getId(), 0.0);
+		eventsManager.processEvent(
+				new ChargingStartEvent(
+						now,
+						charger.getId(),
+						ev.getId(),
+						charger.getChargerType()
+				)
+		);
 		listeners.get(ev.getId()).notifyChargingStarted(ev, now);
 		plugInTimestamps.put(ev.getId(), now);
 	}
