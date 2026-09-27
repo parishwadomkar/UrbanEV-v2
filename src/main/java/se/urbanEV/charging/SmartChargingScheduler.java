@@ -7,8 +7,10 @@ import se.urbanEV.fleet.ElectricVehicle;
 import se.urbanEV.infrastructure.Charger;
 import se.urbanEV.infrastructure.ChargingInfrastructure;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,7 +46,12 @@ public class SmartChargingScheduler {
      */
     public synchronized void schedule(Id<ElectricVehicle> evId, Id<Charger> chargerId, double startTime) {
         double clampedStart = Math.max(0.0, startTime);
-        scheduled.put(evId, new ScheduledCharge(evId, chargerId, clampedStart));
+        ScheduledCharge previous = scheduled.putIfAbsent(
+                evId, new ScheduledCharge(evId, chargerId, clampedStart));
+        if (previous != null) {
+            throw new IllegalStateException(
+                    "SmartChargingScheduler: overlapping schedule for EV " + evId);
+        }
         nScheduled++;
         log.info("SmartChargingScheduler: scheduled EV " + evId + " at t=" + (int) clampedStart + " on charger " + chargerId);
     }
@@ -66,6 +73,7 @@ public class SmartChargingScheduler {
     public synchronized void processDueTasks(double now) {
         if (scheduled.isEmpty()) return;
 
+        List<ScheduledCharge> retries = new ArrayList<>();
         Iterator<Map.Entry<Id<ElectricVehicle>, ScheduledCharge>> it = scheduled.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Id<ElectricVehicle>, ScheduledCharge> e = it.next();
@@ -78,7 +86,9 @@ public class SmartChargingScheduler {
                 Charger charger = infra.getChargers().get(sc.chargerId);
                 if (ev == null || charger == null) {
                     nMissing++;
-                    continue;
+                    throw new IllegalStateException(
+                            "SmartChargingScheduler: scheduled EV or charger is missing; ev="
+                                    + sc.evId + ", charger=" + sc.chargerId);
                 }
                 int plugged = charger.getLogic().getPluggedVehicles().size();
                 int plugs = charger.getPlugCount();
@@ -87,7 +97,8 @@ public class SmartChargingScheduler {
                             + " charger=" + sc.chargerId + " now=" + (int) now
                             + " scheduled=" + (int) sc.startTime + " plugged=" + plugged + "/" + plugs
                             + " -> retry in 300s");
-                    scheduled.put(sc.evId, new ScheduledCharge(sc.evId, sc.chargerId, now + 300.0));
+                    // Do not mutate the HashMap outside its active iterator.
+                    retries.add(new ScheduledCharge(sc.evId, sc.chargerId, now + 300.0));
                     continue;
                 }
 
@@ -95,6 +106,9 @@ public class SmartChargingScheduler {
                 chargingHandler.onSmartChargePlugged(sc.evId, sc.chargerId, now);
                 nPlugged++;
             }
+        }
+        for (ScheduledCharge retry : retries) {
+            scheduled.put(retry.evId, retry);
         }
     }
 

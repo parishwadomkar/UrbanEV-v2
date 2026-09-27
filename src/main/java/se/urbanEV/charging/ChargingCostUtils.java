@@ -122,13 +122,28 @@ public final class ChargingCostUtils {
 
     /**
      * Integral of the applicable ToU multiplier over an active charging interval.
-     *
      * Units: multiplier-seconds.
      *
      * Home charging uses the configured seasonal ToU profile.
      * Work/public/other charging is treated as temporally flat.
      */
     public static double integrateTouMultiplierSeconds(double startTime, double endTime, String chargerAccessType, UrbanEVConfigGroup cfg) {
+
+        UrbanEVConfigGroup.Season season =
+                (cfg != null && cfg.getSeason() != null) ? cfg.getSeason() : UrbanEVConfigGroup.Season.SUMMER;
+        return integrateTouMultiplierSeconds(startTime, endTime, chargerAccessType, season);
+    }
+
+    /**
+     * Revision (2026): season-based overload used by behavioural scoring so
+     * the actual charging-session interval can be priced without estimating
+     * its duration from nominal charger power.
+     */
+    public static double integrateTouMultiplierSeconds(
+            double startTime,
+            double endTime,
+            String chargerAccessType,
+            UrbanEVConfigGroup.Season season) {
 
         if (!Double.isFinite(startTime)
                 || !Double.isFinite(endTime)
@@ -159,7 +174,7 @@ public final class ChargingCostUtils {
             }
 
             double multiplier =
-                    getHourlyCostMultiplier(t, cfg);
+                    getHourlyCostMultiplier(t, season);
 
             weightedSeconds += multiplier * dt;
             t = intervalEnd;
@@ -170,6 +185,17 @@ public final class ChargingCostUtils {
 
     public static double getAverageTouMultiplier(double startTime, double endTime, String chargerAccessType, UrbanEVConfigGroup cfg) {
 
+        UrbanEVConfigGroup.Season season =
+                (cfg != null && cfg.getSeason() != null) ? cfg.getSeason() : UrbanEVConfigGroup.Season.SUMMER;
+        return getAverageTouMultiplier(startTime, endTime, chargerAccessType, season);
+    }
+
+    public static double getAverageTouMultiplier(
+            double startTime,
+            double endTime,
+            String chargerAccessType,
+            UrbanEVConfigGroup.Season season) {
+
         if (!"home".equalsIgnoreCase(chargerAccessType)) {
             return 1.0;
         }
@@ -177,7 +203,7 @@ public final class ChargingCostUtils {
         double duration = endTime - startTime;
 
         if (!Double.isFinite(duration) || duration <= 0.0) {
-            return getHourlyCostMultiplier(startTime, cfg);
+            return getHourlyCostMultiplier(startTime, season);
         }
 
         double weightedSeconds =
@@ -185,7 +211,7 @@ public final class ChargingCostUtils {
                         startTime,
                         endTime,
                         chargerAccessType,
-                        cfg
+                        season
                 );
 
         return weightedSeconds / duration;

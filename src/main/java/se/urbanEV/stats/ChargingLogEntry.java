@@ -74,6 +74,9 @@ public class ChargingLogEntry {
     private double chargingCost;
     private boolean chargingCostSet = false;
 
+    private boolean chargingEndAtSimulationHorizon;
+    private boolean unplugAtSimulationHorizon;
+
     public ChargingLogEntry(Id<ElectricVehicle> vehicle) {
 
         this.electricVehicleId = vehicle;
@@ -222,6 +225,22 @@ public class ChargingLogEntry {
     public void setChargingCost(double chargingCost) {
         this.chargingCost = chargingCost;
         this.chargingCostSet = true;
+    }
+
+    public boolean isChargingEndAtSimulationHorizon() {
+        return chargingEndAtSimulationHorizon;
+    }
+
+    public void setChargingEndAtSimulationHorizon(boolean value) {
+        this.chargingEndAtSimulationHorizon = value;
+    }
+
+    public boolean isUnplugAtSimulationHorizon() {
+        return unplugAtSimulationHorizon;
+    }
+
+    public void setUnplugAtSimulationHorizon(boolean value) {
+        this.unplugAtSimulationHorizon = value;
     }
 
     public Id<ElectricVehicle> getElectricVehicleId() {

@@ -34,24 +34,77 @@ import com.google.inject.Inject;
 import se.urbanEV.infrastructure.Charger;
 import se.urbanEV.infrastructure.ChargingInfrastructure;
 import org.matsim.contrib.ev.EvConfigGroup;
+import org.matsim.core.config.Config;
 import org.matsim.core.mobsim.framework.events.MobsimAfterSimStepEvent;
+import org.matsim.core.mobsim.framework.events.MobsimBeforeCleanupEvent;
 import org.matsim.core.mobsim.framework.listeners.MobsimAfterSimStepListener;
+import org.matsim.core.mobsim.framework.listeners.MobsimBeforeCleanupListener;
+import se.urbanEV.pv.PvGenerationHandler;
 
-public class ChargingHandler implements MobsimAfterSimStepListener {
+import java.util.ArrayList;
+
+public class ChargingHandler implements MobsimAfterSimStepListener, MobsimBeforeCleanupListener {
 	private final Iterable<Charger> chargers;
 	private final int chargeTimeStep;
+	private final PvGenerationHandler pvGenerationHandler;
+	private final double qsimEndTime;
+	private boolean finalized;
 
 	@Inject
-	public ChargingHandler(ChargingInfrastructure chargingInfrastructure, EvConfigGroup evConfig) {
+	public ChargingHandler(
+			ChargingInfrastructure chargingInfrastructure,
+			EvConfigGroup evConfig,
+			PvGenerationHandler pvGenerationHandler,
+			Config config) {
 		this.chargers = chargingInfrastructure.getChargers().values();
 		this.chargeTimeStep = evConfig.getChargeTimeStep();
+		this.pvGenerationHandler = pvGenerationHandler;
+		this.qsimEndTime = config.qsim().getEndTime().seconds();
 	}
 
 	@Override
 	public void notifyMobsimAfterSimStep(@SuppressWarnings("rawtypes") MobsimAfterSimStepEvent e) {
 		if ((e.getSimulationTime() + 1) % chargeTimeStep == 0) {
 			for (Charger c : chargers) {
+				// Revision (2026): update VIPV only for vehicles that are about to
+				// receive grid energy.  Other vehicles are integrated analytically at
+				// mobility-state transitions, avoiding a full-fleet loop every second.
+				pvGenerationHandler.integrateVehiclesTo(
+						c.getLogic().getChargingVehicles(), e.getSimulationTime());
 				c.getLogic().chargeVehicles(chargeTimeStep, e.getSimulationTime());
+			}
+		}
+
+		if (!finalized && Double.isFinite(qsimEndTime) && e.getSimulationTime() >= qsimEndTime) {
+			finalizeAtHorizon();
+		}
+	}
+
+	@Override
+	public void notifyMobsimBeforeCleanup(MobsimBeforeCleanupEvent event) {
+		if (!finalized && Double.isFinite(qsimEndTime)) {
+			finalizeAtHorizon();
+		}
+	}
+
+	/**
+	 * Closes sessions at the configured QSim horizon.  The operation is
+	 * idempotent so terminal SoC scoring can force completion before reading
+	 * final battery states, independently of QSim listener ordering.
+	 */
+	public void finalizeAtHorizon() {
+		if (finalized || !Double.isFinite(qsimEndTime)) {
+			return;
+		}
+		double time = qsimEndTime;
+		finalized = true;
+		for (Charger c : chargers) {
+			pvGenerationHandler.integrateVehiclesTo(c.getLogic().getChargingVehicles(), time);
+			// Close partial sessions at the QSim horizon so their measured grid
+			// energy is scored and written even when the final activity has no end.
+			for (se.urbanEV.fleet.ElectricVehicle ev
+					: new ArrayList<>(c.getLogic().getPluggedVehicles())) {
+				c.getLogic().removeVehicleAtSimulationHorizon(ev, time);
 			}
 		}
 	}

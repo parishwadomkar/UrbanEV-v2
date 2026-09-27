@@ -20,8 +20,6 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
 
     private double score;
     private static final String CHARGING_IDENTIFIER = " charging";
-    private static final String LAST_ACT_IDENTIFIER = " end";
-    private static final double TOU_STEP_SEC = 15.0 * 60.0;
     private ChargingBehaviorScoresCollector chargingBehaviorScoresCollector = ChargingBehaviorScoresCollector.getInstance();
 
     final ChargingBehaviourScoringParameters params;
@@ -41,6 +39,22 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
             boolean costOnly = chargingBehaviourScoringEvent.isCostOnly();
             double soc = chargingBehaviourScoringEvent.getSoc();
             String activityType = chargingBehaviourScoringEvent.getActivityType();
+
+            // Revision (2026): score the actual battery state after all charging,
+            // discharging and VIPV processing at the QSim horizon.  The previous
+            // "activity type contains end" convention was not present in the
+            // Gothenburg plans, leaving socDifferenceUtility completely inactive.
+            if (chargingBehaviourScoringEvent.isTerminalSocOnly()) {
+                double startSoc = chargingBehaviourScoringEvent.getStartSoc();
+                double deficit = Math.max(0.0, startSoc - soc);
+                double deltaScore = params.marginalUtilityOfSocDifference * deficit;
+                chargingBehaviorScoresCollector.addScoringComponentValue(
+                        ScoreComponents.ENERGY_BALANCE, deltaScore);
+                chargingBehaviorScoresCollector.addScoringPerson(
+                        ScoreComponents.ENERGY_BALANCE, person.getId());
+                score += deltaScore;
+                return;
+            }
 
             if (!costOnly) {
 
@@ -85,26 +99,6 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
                     score += delta_score;
                 }
 
-                // punish difference between end soc and start soc to get realistic soc distribution
-                if (activityType.contains(LAST_ACT_IDENTIFIER)) {
-                    if (activityType.contains(CHARGING_IDENTIFIER)) {
-                        // Todo: Check whether this can be replaced by an estimation regarding how high the soc would have been if charging finished.
-                        // This is a workaround
-                        soc = 1;
-                    }
-                    // Calculate SOC difference
-                    Double soc_diff =  soc - chargingBehaviourScoringEvent.getStartSoc();
-                    if(soc_diff<=0){
-                        // Only punish soc difference if SOC is smaller than at the beginning of the cycle.
-                        double delta_score = params.marginalUtilityOfSocDifference * Math.abs(soc_diff);
-                        chargingBehaviorScoresCollector.addScoringComponentValue(ScoreComponents.ENERGY_BALANCE, delta_score);
-                        score += delta_score;
-                    } else
-                    {
-                        chargingBehaviorScoresCollector.addScoringComponentValue(ScoreComponents.ENERGY_BALANCE, 0);
-                    }
-                    chargingBehaviorScoresCollector.addScoringPerson(ScoreComponents.ENERGY_BALANCE, person.getId());
-                }
             }
 
 
@@ -135,33 +129,15 @@ public class ChargingBehaviourScoring implements SumScoringFunction.ArbitraryEve
                         Double pricingTime = chargingBehaviourScoringEvent.getPricingTime();
                         double tForPricing = (pricingTime != null) ? pricingTime : event.getTime();
 
-                        // Estimate charging duration from delivered energy and available power
-                        double powerKW = params.defaultHomeChargerPower;
-                        Object pHomeP = person.getAttributes().getAttribute("homeChargerPower");
-                        if (pHomeP != null) {
-                            try  {
-                                powerKW = Double.parseDouble(pHomeP.toString());
-                            } catch (Exception ignored) { }
-                        }
-                        if (powerKW > 0.0) {
-                            double durationSec = (energyChargedKWh / powerKW) * 3600.0;
-                            if (durationSec > 1.0) {
-                                double tEnd = tForPricing + durationSec;
-                                double wSum = 0.0;
-                                double dtSum = 0.0;
-                                for (double tt = tForPricing; tt < tEnd - 1e-6; tt += TOU_STEP_SEC) {
-                                    double dt = Math.min(TOU_STEP_SEC, tEnd - tt);
-                                    double m = ChargingCostUtils.getHourlyCostMultiplier(tt, params.season);
-                                    wSum += m * dt;
-                                    dtSum += dt;
-                                }
-                                touMultiplier = (dtSum > 0.0) ? (wSum / dtSum) : ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
-                            } else {
-                                touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
-                            }
-                        } else {
-                            touMultiplier = ChargingCostUtils.getHourlyCostMultiplier(tForPricing, params.season);
-                        }
+                        // Revision (2026): the cost event now carries measured grid energy
+                        // and the real session start time.  Price the actual interval instead
+                        // of reconstructing a duration from energy and nominal charger power.
+                        touMultiplier = ChargingCostUtils.getAverageTouMultiplier(
+                                tForPricing,
+                                event.getTime(),
+                                chargerType,
+                                params.season
+                        );
                     }
 
                     double baseChargingCost = energyChargedKWh * unitPricePerKWh * touMultiplier;

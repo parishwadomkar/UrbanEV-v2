@@ -88,6 +88,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     private static final String COINCIDENCE_FACTOR = "coincidenceFactor";
 
     private static final String SEASON = "season";
+    public static final String SCENARIO_NAME = "scenarioName";
     public static final String PV_VEHICLES_FILE = "pvVehiclesFile";
     public static final String PV_SHARE = "pvShare";
     public static final String PV_WP = "pvWp";
@@ -96,6 +97,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     static final String PV_SHARE_EXP = "Share [0..1] of EVs equipped with rooftop PV.";
     static final String PV_WP_EXP = "Peak PV power per equipped EV [Wp].";
     static final String SEASON_EXP = "Season selector for ToU and PV potential: SPRING, SUMMER, AUTUMN, WINTER.";
+    static final String SCENARIO_NAME_EXP = "Canonical immutable scenario id: <sample>_<season>_<treatment>_Wp<capacity>_open<sharePercent>.";
 
 
 
@@ -179,8 +181,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     private double awarenessFactor = 0.0;
     private double coincidenceFactor = 0.0;
 
-//    PV parameters (OmkarP.2006)
+//    PV parameters (OmkarP.2026)
     public enum Season { SUMMER, WINTER , AUTUMN, SPRING }
+    private String scenarioName = "";
     private Season season = Season.SUMMER;
     private String pvVehiclesFile = "";
 
@@ -232,10 +235,11 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         map.put(AWARENESS_FACTOR, "Probability [0.0–1.0] of an agent being aware of ToU pricing and willing to shift charging start.");
         map.put(ALPHA_SCALE_TEMPORAL, "Temporal preference index in [0,2]. 0 biases shifted charging near start of low-ToU; " + "2 biases near end of low-ToU; 1 biases mid-window.");
 
+        map.put(SCENARIO_NAME, SCENARIO_NAME_EXP);
         map.put(SEASON, SEASON_EXP);
-        map.put(PV_VEHICLES_FILE, "CSV file with EV ids that have rooftop PV (one id per row; optional header). Empty => use pvShare fallback.");
-        map.put(PV_SHARE, "Fallback share [0..1] of EVs assigned PV when pvVehiclesFile is empty.");
-        map.put(PV_WP, "PV peak power in W (Wp). Used with PvPotentialUtils factor to compute instantaneous PV power while driving.");
+        map.put(PV_VEHICLES_FILE, "Authoritative CSV cohort of rooftop-PV EV ids (one id per row; optional header). It must be empty in a noVIPV scenario.");
+        map.put(PV_SHARE, "Expected rooftop-PV share [0..1]. With a cohort CSV, this validates cohort size; otherwise it is the deterministic sampling fallback.");
+        map.put(PV_WP, "PV peak power in W (Wp). Used with PvPotentialUtils factors while driving or parked in open sun.");
         map.put(PV_PARKED_OPEN_SHARE, PV_PARKED_OPEN_SHARE_EXP);
 
         return map;
@@ -511,9 +515,21 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
     @StringGetter(SEASON)
     public Season getSeason() { return season; }
 
+    @StringGetter(SCENARIO_NAME)
+    public String getScenarioName() {
+        return scenarioName;
+    }
+
+    @StringSetter(SCENARIO_NAME)
+    public void setScenarioName(String scenarioName) {
+        this.scenarioName = scenarioName == null ? "" : scenarioName.trim();
+    }
+
     @StringSetter(SEASON)
     public void setSeason(String s) {
-        if (s == null) { this.season = Season.SUMMER; return; }
+        if (s == null || s.trim().isEmpty()) {
+            throw new IllegalArgumentException("UrbanEVConfigGroup: season must be specified.");
+        }
 
         String v = s.trim().toUpperCase();
         if (v.equals("FALL")) v = "AUTUMN";
@@ -521,8 +537,9 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
         try {
             this.season = Season.valueOf(v);
         } catch (Exception e) {
-            log.warn("Invalid season='" + s + "'. Falling back to SUMMER.");
-            this.season = Season.SUMMER;
+            throw new IllegalArgumentException(
+                    "UrbanEVConfigGroup: invalid season='" + s
+                            + "'. Expected SPRING, SUMMER, AUTUMN or WINTER.", e);
         }
     }
 
@@ -543,12 +560,13 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
 
     @StringSetter(PV_PARKED_OPEN_SHARE)
     public void setPvParkedOpenShare(double v) {
-        if (!Double.isFinite(v)) {
-            log.warn("UrbanEVConfigGroup: pvParkedOpenShare not finite (" + v + "), using 0.5.");
-            this.pvParkedOpenShare = 0.5;
-            return;
+        // Revision (2026): research configurations fail fast rather than being
+        // silently clamped to a different experimental treatment.
+        if (!Double.isFinite(v) || v < 0.0 || v > 1.0) {
+            throw new IllegalArgumentException(
+                    "UrbanEVConfigGroup: pvParkedOpenShare must be in [0,1]: " + v);
         }
-        this.pvParkedOpenShare = Math.max(0.0, Math.min(1.0, v));
+        this.pvParkedOpenShare = v;
     }
 
     @StringGetter(PV_SHARE)
@@ -558,12 +576,11 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
 
     @StringSetter(PV_SHARE)
     public void setPvShare(double v) {
-        if (!Double.isFinite(v)) {
-            log.warn("UrbanEVConfigGroup: pvShare not finite (" + v + "), using 0.0.");
-            this.pvShare = 0.0;
-            return;
+        if (!Double.isFinite(v) || v < 0.0 || v > 1.0) {
+            throw new IllegalArgumentException(
+                    "UrbanEVConfigGroup: pvShare must be in [0,1]: " + v);
         }
-        this.pvShare = Math.max(0.0, Math.min(1.0, v));
+        this.pvShare = v;
     }
 
     @StringGetter(PV_WP)
@@ -573,12 +590,11 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
 
     @StringSetter(PV_WP)
     public void setPvWp(double v) {
-        if (!Double.isFinite(v)) {
-            log.warn("UrbanEVConfigGroup: pvWp not finite (" + v + "), using 0.0.");
-            this.pvWp = 0.0;
-            return;
+        if (!Double.isFinite(v) || v < 0.0) {
+            throw new IllegalArgumentException(
+                    "UrbanEVConfigGroup: pvWp must be finite and non-negative: " + v);
         }
-        this.pvWp = Math.max(0.0, v);
+        this.pvWp = v;
     }
 
     public void logIfSuspicious() {
@@ -595,7 +611,7 @@ public final class UrbanEVConfigGroup extends ReflectiveConfigGroup {
             log.warn("UrbanEVConfigGroup: pvShare>0 but pvWp<=0; PV will have no effect.");
         }
         if (pvVehiclesFile != null && !pvVehiclesFile.trim().isEmpty() && pvShare > 0.0) {
-            log.info("UrbanEVConfigGroup: pvVehiclesFile is set; pvShare is only a fallback if CSV load fails.");
+            log.info("UrbanEVConfigGroup: pvVehiclesFile is authoritative; pvShare is used to validate its expected size.");
         }
     }
 }

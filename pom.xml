@@ -50,6 +50,15 @@
 			<version>${matsim.version}</version>
 		</dependency>
 
+		<!-- Revision (2026): focused regression tests for VIPV energy accounting,
+		     local-time profiles, deterministic sampling and fail-fast validation. -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.10.2</version>
+			<scope>test</scope>
+		</dependency>
+
 		<!-- Include the JUnit testing library and MATSim test infrastructure if needed.
 		<dependency>
 			<groupId>junit</groupId>
@@ -104,6 +113,12 @@
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
+			</plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -74,12 +74,13 @@ public class VehicleChargingHandler
     private static final Logger log = Logger.getLogger(VehicleChargingHandler.class);
 
     public static final String CHARGING_IDENTIFIER = " charging";
-    private Map<Id<Person>, Id<Vehicle>> lastVehicleUsed = new HashMap<>();
-    private Map<Id<ElectricVehicle>, Id<Charger>> vehiclesAtChargers = new HashMap<>();
+    private final Map<Id<Person>, Id<Vehicle>> lastVehicleUsed = new HashMap<>();
+    private final Map<Id<ElectricVehicle>, Id<Charger>> vehiclesAtChargers = new HashMap<>();
 
-    // track SOC and time at the start of each charging session- for smart rescheduling
-    private final Map<Id<ElectricVehicle>, Double> chargeStartSoc = new HashMap<>();
-    private final Map<Id<ElectricVehicle>, Double> chargeStartTime = new HashMap<>();
+    // Revision (2026): retain one authoritative context per charging session.
+    // Grid energy is supplied by ChargingEndEvent; battery-SOC differences are
+    // not used because they may contain simultaneous rooftop-PV generation.
+    private final Map<Id<ElectricVehicle>, ChargingSessionContext> chargingSessions = new HashMap<>();
 
     private final ChargingInfrastructure chargingInfrastructure;
     private final Network network;
@@ -118,7 +119,7 @@ public class VehicleChargingHandler
     /**
      * Implemented by omkarp, 10.01.2025
      * Called by SmartChargingScheduler when a deferred home-charging session actually plugs in.
-     * Responsible for registering start SOC/time so that ActivityEndEvent can compute energyChargedKWh.
+     * Finalizes the pending session context with the actual plug-in time.
      */
     public void onSmartChargePlugged(Id<ElectricVehicle> evId, Id<Charger> chargerId, double time) {
         ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
@@ -129,11 +130,16 @@ public class VehicleChargingHandler
 
         vehiclesAtChargers.put(evId, chargerId);
 
-        double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-        chargeStartSoc.put(evId, socFraction);
-        chargeStartTime.put(evId, time);
+        ChargingSessionContext context = chargingSessions.get(evId);
+        if (context == null) {
+            throw new IllegalStateException(
+                    "Deferred charging started without a registered session context for EV " + evId);
+        }
+        context.startTime = time;
+        context.chargerId = chargerId;
 
         if (log.isDebugEnabled()) {
+            double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
             log.debug(String.format(
                     "onSmartChargePlugged: EV %s plugged at charger %s at t=%.0f, soc=%.3f",
                     evId, chargerId, time, socFraction
@@ -164,8 +170,22 @@ public class VehicleChargingHandler
                         boolean isHomeChargingAct =
                                 actType.startsWith("home") && actType.endsWith(CHARGING_IDENTIFIER);
 
+                        // Revision (2026-09): smart home-ToU rescheduling must
+                        // follow the charger that will actually deliver the
+                        // energy, not only the activity label.  A home charging
+                        // activity can fall back to a nearby public charger;
+                        // delaying that session with a home tariff while later
+                        // pricing it as public charging is inconsistent.
+                        String selectedChargerAccessType =
+                                ChargingCostUtils.getChargerAccessType(
+                                        selectedCharger.getId().toString());
+                        boolean isActualHomeCharger =
+                                "home".equalsIgnoreCase(selectedChargerAccessType);
+
                         // default: immediate charging (for non-home or smart disabled)
-                        boolean smartEnabled = urbanEvCfg.isEnableSmartCharging() && isHomeChargingAct;
+                        boolean smartEnabled = urbanEvCfg.isEnableSmartCharging()
+                                && isHomeChargingAct
+                                && isActualHomeCharger;
 
                         // Smart ToU aware rescheduling: OmkarP.(2025)
                         if (smartEnabled && activity != null) {
@@ -179,7 +199,7 @@ public class VehicleChargingHandler
                             }
 
                             if (departureTime > arrivalTime) {
-                                // energy missing (J - kWh)
+                                // Energy missing is held internally in joules and converted below to kWh.
                                 double energyRequiredJ = ev.getBattery().getCapacity() - ev.getBattery().getSoc();
                                 if (energyRequiredJ < 0.0) {
                                     energyRequiredJ = 0.0;
@@ -226,6 +246,8 @@ public class VehicleChargingHandler
 
                                 if (optimalStart > arrivalTime + 1.0) {
                                     // schedule deferred plug-in
+                                    registerChargingSession(
+                                            evId, personId, actType, Double.NaN, selectedCharger.getId());
                                     smartScheduler.schedule(evId, selectedCharger.getId(), optimalStart);
                                     walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
 
@@ -236,35 +258,29 @@ public class VehicleChargingHandler
 
                                 } else {
                                     // optimum is effectively "now" (or agent not aware) fall back to immediate charging
+                                    registerChargingSession(
+                                            evId, personId, actType, arrivalTime, selectedCharger.getId());
                                     selectedCharger.getLogic().addVehicle(ev, arrivalTime);
                                     vehiclesAtChargers.put(evId, selectedCharger.getId());
                                     walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
-
-                                    double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-                                    chargeStartSoc.put(evId, socFraction);
-                                    chargeStartTime.put(evId, arrivalTime);
                                 }
                             } else {
                                 // fallback immediate
                                 double t = event.getTime();
+                                registerChargingSession(
+                                        evId, personId, actType, t, selectedCharger.getId());
                                 selectedCharger.getLogic().addVehicle(ev, t);
                                 vehiclesAtChargers.put(evId, selectedCharger.getId());
                                 walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
-
-                                double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-                                chargeStartSoc.put(evId, socFraction);
-                                chargeStartTime.put(evId, t);
                             }
                         } else {
                             // non-home charging or smart disabled: legacy behaviour
                             double t = event.getTime();
+                            registerChargingSession(
+                                    evId, personId, actType, t, selectedCharger.getId());
                             selectedCharger.getLogic().addVehicle(ev, t);
                             vehiclesAtChargers.put(evId, selectedCharger.getId());
                             walkingDistance = DistanceUtils.calculateDistance(activityCoord, selectedCharger.getCoord());
-
-                            double socFraction = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-                            chargeStartSoc.put(evId, socFraction);
-                            chargeStartTime.put(evId, t);
                         }
 
                     } else {
@@ -298,73 +314,23 @@ public class VehicleChargingHandler
                     smartScheduler.cancelIfScheduled(evId);
                 }
 
-                ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
-
-                // compute energy charged during this session and emit cost-only scoring event: OmkarP.(2025)
-                if (ev != null) {
-                    Double startSocFrac = chargeStartSoc.remove(evId);
-                    Double startTime = chargeStartTime.remove(evId);
-
-                    double energyChargedKWh = 0.0;
-                    if (startSocFrac != null) {
-                        double currentSocFrac = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-                        double deltaSocFrac = currentSocFrac - startSocFrac;
-                        if (deltaSocFrac > 0.0) {  // capacity in internal energy units; converted to kWh via 3.6e6
-                            double capacityKWh = ev.getBattery().getCapacity() / 3_600_000.0;
-                            energyChargedKWh = deltaSocFrac * capacityKWh;
-                        }
-                    }
-
-                    if (energyChargedKWh > 0.0) {
-                        double pricingTime = (startTime != null) ? startTime : event.getTime();
-
-                        // classify charger type from activity type ("home charging", "work charging", else public)
-                        String actType = event.getActType();
-                        String chargerType;
-                        if (actType.startsWith("home")) {
-                            chargerType = "home";
-                        } else if (actType.startsWith("work")) {
-                            chargerType = "work";
-                        } else {
-                            chargerType = "public";
-                        }
-
-                        if (startTime != null && energyChargedKWh > 0.0) {
-                            double durH = Math.max(1e-6, (event.getTime() - startTime) / 3600.0);
-                            double avgKW = energyChargedKWh / durH;
-
-                            if (chargerType != null && chargerType.equals("home")) {
-                                log.info(String.format(
-                                        "HOME session: person=%s ev=%s start=%.0f end=%.0f kWh=%.2f avg_kW=%.2f",
-                                        event.getPersonId(), evId, startTime, event.getTime(), energyChargedKWh, avgKW
-                                ));
-                            }
-                        }
-
-                        double socFrac = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
-                        double startSocForScore = ev.getBattery().getStartSoc() / ev.getBattery().getCapacity();
-
-                        // cost-only event: EV scoring will skip non-cost components when costOnly == true
-                        eventsManager.processEvent(new ChargingBehaviourScoringEvent(
-                                event.getTime(),                // event time
-                                event.getPersonId(),
-                                socFrac,
-                                0.0,              // no walking component here
-                                actType,
-                                startSocForScore,
-                                pricingTime,                    // pricingTime for ToU
-                                energyChargedKWh,
-                                chargerType,
-                                true                            // costOnly
-                        ));
-                    }
-                }
-
                 // removal from charger logic
                 Id<Charger> chargerId = vehiclesAtChargers.remove(evId);
                 if (chargerId != null) {
                     Charger charger = chargingInfrastructure.getChargers().get(chargerId);
-                    charger.getLogic().removeVehicle(electricFleet.getElectricVehicles().get(evId), event.getTime());
+                    ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
+                    if (charger == null || ev == null) {
+                        throw new IllegalStateException(
+                                "Cannot end charging session for EV " + evId + " at charger " + chargerId);
+                    }
+                    // ChargingLogic emits the authoritative ChargingEndEvent synchronously.
+                    charger.getLogic().removeVehicle(ev, event.getTime());
+                } else {
+                    // A deferred session may be cancelled before the scheduled plug-in.
+                    ChargingSessionContext context = chargingSessions.get(evId);
+                    if (context != null && !Double.isFinite(context.startTime)) {
+                        chargingSessions.remove(evId);
+                    }
                 }
             }
         }
@@ -375,11 +341,85 @@ public class VehicleChargingHandler
 		lastVehicleUsed.put(event.getPersonId(), event.getVehicleId());
 	}
 
-	@Override
-	public void handleEvent(ChargingEndEvent event) {
-		// vehiclesAtChargers.remove(event.getVehicleId());
-		// Charging has ended before activity ends
-	}
+    @Override
+    public void handleEvent(ChargingEndEvent event) {
+        Id<ElectricVehicle> evId = event.getVehicleId();
+        ChargingSessionContext context = chargingSessions.remove(evId);
+        if (context == null) {
+            throw new IllegalStateException(
+                    "ChargingEndEvent without an active session context for EV " + evId);
+        }
+        if (!context.chargerId.equals(event.getChargerId())) {
+            throw new IllegalStateException(
+                    "ChargingEndEvent charger mismatch for EV " + evId
+                            + ": expected=" + context.chargerId + ", event=" + event.getChargerId());
+        }
+        if (!Double.isFinite(context.startTime) || event.getTime() < context.startTime) {
+            throw new IllegalStateException(
+                    "Invalid charging interval for EV " + evId + ": start="
+                            + context.startTime + ", end=" + event.getTime());
+        }
+
+        ElectricVehicle ev = electricFleet.getElectricVehicles().get(evId);
+        if (ev == null) {
+            throw new IllegalStateException("ChargingEndEvent for EV not present in fleet: " + evId);
+        }
+
+        // Revision (2026): price only charger/grid-delivered energy. Rooftop-PV
+        // energy is deliberately excluded from this event-level quantity.
+        double gridEnergyKWh = event.getGridEnergy_J() / 3_600_000.0;
+        if (gridEnergyKWh <= 0.0) {
+            return;
+        }
+
+        // Revision (2026-09): price the session according to the charger that
+        // actually delivered the grid energy.  A charging activity at home or
+        // work can be served by a nearby public charger; inferring the access
+        // type from the activity label therefore understated behavioural costs
+        // and disagreed with chargingStats.csv, which already uses charger IDs.
+        String chargerAccessType = ChargingCostUtils.getChargerAccessType(
+                event.getChargerId().toString());
+        double socFrac = ev.getBattery().getSoc() / ev.getBattery().getCapacity();
+        double startSocForScore = ev.getBattery().getStartSoc() / ev.getBattery().getCapacity();
+
+        // Cost-only event: non-cost scoring components are skipped by the scorer.
+        eventsManager.processEvent(new ChargingBehaviourScoringEvent(
+                event.getTime(),
+                context.personId,
+                socFrac,
+                0.0,
+                context.activityType,
+                startSocForScore,
+                context.startTime,
+                gridEnergyKWh,
+                chargerAccessType,
+                true
+        ));
+
+        if (log.isDebugEnabled()) {
+            double durationHours = Math.max(1e-9, (event.getTime() - context.startTime) / 3600.0);
+            log.debug(String.format(
+                    "Grid charging session: person=%s ev=%s access=%s start=%.0f end=%.0f grid_kWh=%.3f avg_kW=%.3f",
+                    context.personId, evId, chargerAccessType, context.startTime,
+                    event.getTime(), gridEnergyKWh, gridEnergyKWh / durationHours));
+        }
+    }
+
+    private void registerChargingSession(
+            Id<ElectricVehicle> evId,
+            Id<Person> personId,
+            String activityType,
+            double startTime,
+            Id<Charger> chargerId) {
+
+        ChargingSessionContext context = new ChargingSessionContext(
+                personId, activityType, startTime, chargerId);
+        ChargingSessionContext previous = chargingSessions.putIfAbsent(evId, context);
+        if (previous != null) {
+            throw new IllegalStateException(
+                    "Attempted to register overlapping charging sessions for EV " + evId);
+        }
+    }
 
 	/**
 	 * gets ativity from agent's plan by looking for current time
@@ -460,12 +500,29 @@ public class VehicleChargingHandler
     public void reset(int iteration) {
         lastVehicleUsed.clear();
         vehiclesAtChargers.clear();
-        chargeStartSoc.clear();
-        chargeStartTime.clear();
+        chargingSessions.clear();
 
         if (smartScheduler != null) {
             log.info(smartScheduler.consumeStatsLine(iteration));
             smartScheduler.reset();
+        }
+    }
+
+    private static final class ChargingSessionContext {
+        private final Id<Person> personId;
+        private final String activityType;
+        private double startTime;
+        private Id<Charger> chargerId;
+
+        private ChargingSessionContext(
+                Id<Person> personId,
+                String activityType,
+                double startTime,
+                Id<Charger> chargerId) {
+            this.personId = personId;
+            this.activityType = activityType;
+            this.startTime = startTime;
+            this.chargerId = chargerId;
         }
     }
 }

@@ -119,7 +119,20 @@ public class ChargingLogicImpl implements ChargingLogic {
 
 	@Override
 	public void removeVehicle(ElectricVehicle ev, double now) {
+		removeVehicle(ev, now, false);
+	}
+
+	@Override
+	public void removeVehicleAtSimulationHorizon(ElectricVehicle ev, double now) {
+		removeVehicle(ev, now, true);
+	}
+
+	private void removeVehicle(ElectricVehicle ev, double now, boolean simulationHorizonClosure) {
 		if (pluggedVehicles.remove(ev.getId()) != null) { // successfully removed
+			Double plugInTime = plugInTimestamps.get(ev.getId());
+			if (plugInTime == null) {
+				throw new IllegalStateException("Missing plug-in time for EV " + ev.getId());
+			}
 			if (chargingVehicles.remove(ev.getId()) != null) {
 				double sessionGridEnergy_J = gridEnergy_J.getOrDefault(ev.getId(), 0.0);
 
@@ -129,14 +142,26 @@ public class ChargingLogicImpl implements ChargingLogic {
 								charger.getId(),
 								ev.getId(),
 								ev.getBattery().getSoc() / ev.getBattery().getCapacity(),
-								now - plugInTimestamps.get(ev.getId()),
-								sessionGridEnergy_J
+								now - plugInTime,
+								sessionGridEnergy_J,
+								simulationHorizonClosure
 						)
 				);
-				gridEnergy_J.remove(ev.getId());
 			}
-			eventsManager.processEvent(new UnpluggingEvent(now, charger.getId(), ev.getId(), now-plugInTimestamps.get(ev.getId())));
-			listeners.remove(ev.getId()).notifyChargingEnded(ev, now);
+			gridEnergy_J.remove(ev.getId());
+			eventsManager.processEvent(new UnpluggingEvent(
+					now,
+					charger.getId(),
+					ev.getId(),
+					now - plugInTime,
+					simulationHorizonClosure));
+			plugInTimestamps.remove(ev.getId());
+
+			ChargingListener listener = listeners.remove(ev.getId());
+			if (listener == null) {
+				throw new IllegalStateException("Missing charging listener for EV " + ev.getId());
+			}
+			listener.notifyChargingEnded(ev, now);
 
 		} else { // not plugged
 			throw new IllegalArgumentException(
@@ -166,10 +191,17 @@ public class ChargingLogicImpl implements ChargingLogic {
 
 	private final Collection<ElectricVehicle> unmodifiablePluggedVehicles = Collections.unmodifiableCollection(
 			pluggedVehicles.values());
+	private final Collection<ElectricVehicle> unmodifiableChargingVehicles = Collections.unmodifiableCollection(
+			chargingVehicles.values());
 
 	@Override
 	public Collection<ElectricVehicle> getPluggedVehicles() {
 		return unmodifiablePluggedVehicles;
+	}
+
+	@Override
+	public Collection<ElectricVehicle> getChargingVehicles() {
+		return unmodifiableChargingVehicles;
 	}
 
 	@Override

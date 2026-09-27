@@ -18,6 +18,7 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
     private final Double energyChargedKWh;
     private final String chargerType;
     private final boolean costOnly;
+    private final boolean terminalSocOnly;
     private final Double pricingTime;
 
     // Backward-compatible constructor (no cost info): OmkarP.(2025)
@@ -27,7 +28,8 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
                                          Double walkingDistance,
                                          String activityType,
                                          double startSoc) {
-        this(time, personId, soc, walkingDistance, activityType, startSoc, null, null, null, false);
+        this(time, personId, soc, walkingDistance, activityType, startSoc,
+                null, null, null, false, false);
     }
 
     // Constructor with charging cost info: OmkarP.(2025)
@@ -41,6 +43,21 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
                                          Double energyChargedKWh,
                                          String chargerType,
                                          boolean costOnly) {
+        this(time, personId, soc, walkingDistance, activityType, startSoc,
+                pricingTime, energyChargedKWh, chargerType, costOnly, false);
+    }
+
+    private ChargingBehaviourScoringEvent(double time,
+                                           Id<Person> personId,
+                                           Double soc,
+                                           Double walkingDistance,
+                                           String activityType,
+                                           double startSoc,
+                                           Double pricingTime,
+                                           Double energyChargedKWh,
+                                           String chargerType,
+                                           boolean costOnly,
+                                           boolean terminalSocOnly) {
         super(time);
         this.personId = personId;
         this.soc = soc;
@@ -52,6 +69,31 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
         this.energyChargedKWh = energyChargedKWh;
         this.chargerType = chargerType;
         this.costOnly = costOnly;
+        this.terminalSocOnly = terminalSocOnly;
+    }
+
+    /**
+     * Creates one explicit end-of-horizon SoC event for terminal energy-balance
+     * scoring.  It is intentionally separate from activity and charging-cost
+     * events so the terminal penalty is applied exactly once per EV and iteration.
+     */
+    public static ChargingBehaviourScoringEvent terminalSoc(
+            double time,
+            Id<Person> personId,
+            double soc,
+            double startSoc) {
+        return new ChargingBehaviourScoringEvent(
+                time,
+                personId,
+                soc,
+                0.0,
+                "simulation end",
+                startSoc,
+                null,
+                null,
+                null,
+                false,
+                true);
     }
 
     @Override
@@ -83,6 +125,9 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
     public boolean isCostOnly() {
         return costOnly;
     }
+    public boolean isTerminalSocOnly() {
+        return terminalSocOnly;
+    }
 
     @Override
     public Map<String, String> getAttributes() {
@@ -96,6 +141,7 @@ public class ChargingBehaviourScoringEvent extends Event implements HasPersonId 
         if (chargerType != null) { attributes.put("chargerType", chargerType); }
         if (pricingTime != null) { attributes.put("pricingTime", pricingTime.toString()); }
         attributes.put("costOnly", Boolean.toString(costOnly));
+        attributes.put("terminalSocOnly", Boolean.toString(terminalSocOnly));
 
         return attributes;
     }

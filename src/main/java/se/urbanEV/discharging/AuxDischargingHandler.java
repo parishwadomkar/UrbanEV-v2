@@ -32,6 +32,7 @@ package se.urbanEV.discharging;
 import com.google.inject.Inject;
 import se.urbanEV.MobsimScopeEventHandling;
 import se.urbanEV.fleet.ElectricVehicle;
+import se.urbanEV.pv.PvGenerationHandler;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
@@ -80,14 +81,16 @@ public class AuxDischargingHandler
 
 	private final VehicleProvider vehicleProvider;
 	private final int auxDischargeTimeStep;
+	private final PvGenerationHandler pvGenerationHandler;
 
 	private final ConcurrentMap<Id<Person>, VehicleAndLink> vehicles = new ConcurrentHashMap<>();
 
 	@Inject
 	public AuxDischargingHandler(VehicleProvider vehicleProvider, EvConfigGroup evCfg,
-			MobsimScopeEventHandling events) {
+			MobsimScopeEventHandling events, PvGenerationHandler pvGenerationHandler) {
 		this.vehicleProvider = vehicleProvider;
 		this.auxDischargeTimeStep = evCfg.getAuxDischargeTimeStep();
+		this.pvGenerationHandler = pvGenerationHandler;
 		events.addMobsimScopeHandler(this);
 	}
 
@@ -96,6 +99,9 @@ public class AuxDischargingHandler
 		if (e.getSimulationTime() % auxDischargeTimeStep == 0) {
 			for (VehicleAndLink vehicleAndLink : vehicles.values()) {
 				ElectricVehicle ev = vehicleAndLink.vehicle;
+				// Keep VIPV and auxiliary load on the same battery timeline when a
+				// non-moving vehicle is configured for auxiliary consumption.
+				pvGenerationHandler.integrateVehicleTo(ev, e.getSimulationTime());
 				double energy = ev.getAuxEnergyConsumption()
 						.calcEnergyConsumption(e.getSimulationTime(), auxDischargeTimeStep, vehicleAndLink.linkId);
 				ev.getBattery().changeSoc(-energy);
