@@ -18,7 +18,7 @@
         <param name="emptyBatteryUtility" value="-12"/>
         <param name="walkingUtility" value="-1"/>
         <param name="homeChargingUtility" value="0"/>
-        <param name="socDifferenceUtility" value="-10"/>
+        <param name="socDifferenceUtility" value="-15"/>
         <param name="maxNumberSimultaneousPlanChanges" value="2"/>
         <param name="timeAdjustmentProbability" value="0.2"/>
         <param name="maxTimeFlexibility" value="600"/>
@@ -34,17 +34,19 @@
         <param name="workChargingCost" value="4.0"/>
         <param name="publicChargingCost" value="5.5"/>
         <param name="betaMoney" value="-0.06"/>            <!--- -0.05 for VoT ~120 SEK/hr; −0.08 ~75 SEK/h; Remove Cost - 0.0 -->
-        <param name="alphaScaleCost" value="0.5"/>
+        <param name="alphaScaleCost" value="1.0"/>
         <param name="enableSmartCharging" value="true"/>   <!-- Remove smart rescheduling- false -->
         <param name="alphaScaleTemporal" value="0.2"/>
         <param name="awarenessFactor" value="0.3"/>
         <param name="coincidenceFactor" value="0.7"/>    <!--[0,1] Higher value = less spread (smaller std-dev)-->
 
-        <param name="season" value="WINTER"/>   <!--  { SUMMER, WINTER , AUTUMN, SPRING } -->
-        <param name="pvVehiclesFile" value="scenarios/sweden/10pct/80VIPV_10pct.csv"/>
-        <param name="pvParkedOpenShare" value="0.5"/>    <!-- 50% parked instances will generate PV energy -->
-        <param name="pvShare" value="0.80"/>
-        <param name="pvWp" value="700.0"/>           <!-- to disable PV, set this to 0; default 400 -->
+        <!-- this config is an explicit noVIPV baseline. Use VipvScenarioRunner to select an immutable VIPV treatment. -->
+        <param name="scenarioName" value="10pct_WINTER_noVIPV_Wp0_open0"/>
+        <param name="season" value="WINTER"/>   <!--  { SUMMER, WINTER, AUTUMN, SPRING } -->
+        <param name="pvVehiclesFile" value=""/> <!-- no cohort file is permitted for noVIPV -->
+        <param name="pvParkedOpenShare" value="0.0"/>
+        <param name="pvShare" value="0.0"/>
+        <param name="pvWp" value="0.0"/>
     </module>
 
     <module name="global">
@@ -64,29 +66,30 @@
     </module>
 
     <module name="controler">
-        <param name="outputDirectory" value="output/10pct/VIPV80_Wp700_WINTER"/>
+        <!-- output name encodes sample, season, treatment, Wp and exposure. -->
+        <param name="outputDirectory" value="output/10pct/10pct_WINTER_noVIPV_Wp0_open0"/>
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="70"/>
+        <param name="lastIteration" value="100"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
-        <param name="writeEventsInterval" value="5"/>
-        <param name="writePlansInterval" value="5"/>
+        <param name="writeEventsInterval" value="10"/>
+        <param name="writePlansInterval" value="10"/>
         <param name="routingAlgorithmType" value="FastAStarLandmarks" />
         <param name="createGraphs" value="true"/>
-        <param name="writeTripsInterval" value="1"/>
+        <param name="writeTripsInterval" value="10"/>
     </module>
 
     <module name="qsim">
         <param name="startTime" value="00:00:00"/>
         <param name="endTime" value="168:00:00"/>
-        <param name="flowCapacityFactor" value="0.85"/>
-        <param name="storageCapacityFactor" value="0.9"/>
+        <param name="flowCapacityFactor" value="1.0"/>
+        <param name="storageCapacityFactor" value="1.0"/>
         <param name="snapshotperiod" value="01:00:00"/>
     </module>
 
     <module name="planCalcScore">
-        <param name="learningRate" value="0.4"/>
+        <param name="learningRate" value="0.5"/>
         <param name="BrainExpBeta" value="2.0"/>
         <param name="writeExperiencedPlans" value="false"/>
         <param name="usingOldScoringBelowZeroUtilityDuration" value="false"/>
@@ -256,7 +259,7 @@
 
     <module name= "strategy">
         <!-- fraction of iterations where innovative strategies are switched off -->
-        <param name="fractionOfIterationsToDisableInnovation" value="0.85" />
+        <param name="fractionOfIterationsToDisableInnovation" value="0.8" />
         <!-- maximum number of plans per agent.  ``0'' means ``infinity''. -->
         <param name="maxAgentPlanMemorySize" value="5" />
         <parameterset type= "strategysettings">

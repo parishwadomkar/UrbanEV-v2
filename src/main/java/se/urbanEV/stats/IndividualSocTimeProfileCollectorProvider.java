@@ -65,6 +65,9 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 
 	//	Instead of plotting random EV soc profiles, we choose to output the same EV profiles for each iteration (OmkarP.2026)
 //	private static final List<Id<ElectricVehicle>> FIXED_EV_IDS = List.of(
+//			Id.create("7378192", ElectricVehicle.class),
+//			Id.create("9669071", ElectricVehicle.class),
+//			Id.create("2329756", ElectricVehicle.class),
 //			Id.create("4606454", ElectricVehicle.class),
 //			Id.create("7326174", ElectricVehicle.class),
 //			Id.create("4772272", ElectricVehicle.class),
@@ -78,7 +81,7 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 //			Id.create("7442665", ElectricVehicle.class),
 //			Id.create("2129349", ElectricVehicle.class)
 //	);
-//
+
 //		public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
 //		List<ElectricVehicle> selectedEvs = FIXED_EV_IDS.stream()
 //				.map(id -> evFleet.getElectricVehicles().get(id))
@@ -94,7 +97,7 @@ public class IndividualSocTimeProfileCollectorProvider implements Provider<Mobsi
 //		);
 //	}
 
-	private static final int MAX_VEHICLE_COLUMNS = 10;
+	private static final int MAX_VEHICLE_COLUMNS = 15;
 
 	public static ProfileCalculator createIndividualSocCalculator(final ElectricFleet evFleet) {
 		int columns = Math.min(evFleet.getElectricVehicles().size(), MAX_VEHICLE_COLUMNS);

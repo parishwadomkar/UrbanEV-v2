@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MobsimScopeEventHandling implements StartupListener, AfterMobsimListener {
 	private final Collection<MobsimScopeEventHandler> eventHandlers = new ConcurrentLinkedQueue<>();
 	private final EventsManager eventsManager;
-	private Random random = new Random();
+	private Random random;
 	private StrategyManager strategyManager;
 
 	private int iterationNumber = 0;
@@ -117,6 +117,9 @@ public class MobsimScopeEventHandling implements StartupListener, AfterMobsimLis
 
 	@Override
 	public void notifyStartup(StartupEvent startupEvent) {
+		// Revision (2026): keep charger assignment and SoC initialization
+		// reproducible across otherwise identical scenario runs.
+		random = new Random(config.global().getRandomSeed() ^ 0x6a09e667f3bcc909L);
 		lastIteration = config.controler().getLastIteration();
 		endTime = config.qsim().getEndTime().seconds();
 		strategyManager = matsimServices.getStrategyManager();

@@ -44,24 +44,14 @@ public class ChargingEndEvent extends Event {
 	public static final String ATTRIBUTE_ENDSOC = "soc";
 	public static final String ATTRIBUTE_CHARGINGDUR = "charging_duration";
 	public static final String ATTRIBUTE_GRIDENERGY = "grid_energy_J";   //OmkarP.(2026)
+	public static final String ATTRIBUTE_SIMULATION_HORIZON_CLOSURE = "simulation_horizon_closure";
 
 	private final Id<Charger> chargerId;
 	private final Id<ElectricVehicle> vehicleId;
 	private final Double soc;
 	private final Double charging_duration;
 	private final Double gridEnergy_J;
-
-	public ChargingEndEvent(double time, Id<Charger> chargerId, Id<ElectricVehicle> vehicleId, double soc, double charging_duration) {
-
-		this(
-				time,
-				chargerId,
-				vehicleId,
-				soc,
-				charging_duration,
-				0.0
-		);
-	}
+	private final boolean simulationHorizonClosure;
 
 	public ChargingEndEvent(
 			double time,
@@ -70,13 +60,31 @@ public class ChargingEndEvent extends Event {
 			double soc,
 			double charging_duration,
 			double gridEnergy_J) {
+		this(time, chargerId, vehicleId, soc, charging_duration, gridEnergy_J, false);
+	}
+
+	public ChargingEndEvent(
+			double time,
+			Id<Charger> chargerId,
+			Id<ElectricVehicle> vehicleId,
+			double soc,
+			double charging_duration,
+			double gridEnergy_J,
+			boolean simulationHorizonClosure) {
 
 		super(time);
 		this.chargerId = chargerId;
 		this.vehicleId = vehicleId;
 		this.soc = soc;
 		this.charging_duration = charging_duration;
+
+		// Revision (2026): grid energy is mandatory.  A legacy constructor used to
+		// default this value to zero, which could silently suppress charging costs.
+		if (!Double.isFinite(gridEnergy_J) || gridEnergy_J < 0.0) {
+			throw new IllegalArgumentException("gridEnergy_J must be finite and non-negative: " + gridEnergy_J);
+		}
 		this.gridEnergy_J = gridEnergy_J;
+		this.simulationHorizonClosure = simulationHorizonClosure;
 	}
 
 	public Id<Charger> getChargerId() {
@@ -92,6 +100,10 @@ public class ChargingEndEvent extends Event {
 	}
 
 	public Double getGridEnergy_J() { return gridEnergy_J;}
+
+	public boolean isSimulationHorizonClosure() {
+		return simulationHorizonClosure;
+	}
 
 	@Override
 	public String getEventType() {
@@ -110,6 +122,8 @@ public class ChargingEndEvent extends Event {
 		attr.put(ATTRIBUTE_ENDSOC, soc.toString());
 		attr.put(ATTRIBUTE_CHARGINGDUR, charging_duration.toString());
 		attr.put(ATTRIBUTE_GRIDENERGY, gridEnergy_J.toString());
+		attr.put(ATTRIBUTE_SIMULATION_HORIZON_CLOSURE,
+				Boolean.toString(simulationHorizonClosure));
 		return attr;
 	}
 }

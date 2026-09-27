@@ -2,6 +2,7 @@ package se.urbanEV.pv;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
+import org.matsim.core.config.Config;
 import org.matsim.core.controler.events.StartupEvent;
 import org.matsim.core.controler.listener.StartupListener;
 import se.urbanEV.config.UrbanEVConfigGroup;
@@ -14,8 +15,6 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 
-import org.matsim.core.gbl.MatsimRandom;
-
 /**
  * Vehicle Integrated Photovoltaic (VIPV)
  * created by OmkarP.(2026)
@@ -26,18 +25,25 @@ public final class PvVehicleRegistry implements StartupListener {
 
     private final UrbanEVConfigGroup cfg;
     private final ElectricFleetSpecification fleetSpec;
+    private final long globalSeed;
 
     private Set<Id<ElectricVehicle>> pvVehicles = Collections.emptySet();
 
     @Inject
-    public PvVehicleRegistry(UrbanEVConfigGroup cfg, ElectricFleetSpecification fleetSpec) {
+    public PvVehicleRegistry(
+            UrbanEVConfigGroup cfg,
+            ElectricFleetSpecification fleetSpec,
+            Config config) {
         this.cfg = cfg;
         this.fleetSpec = fleetSpec;
+        this.globalSeed = config.global().getRandomSeed();
     }
 
     @Override
     public void notifyStartup(StartupEvent event) {
-        Random rnd = MatsimRandom.getRandom();
+        // Revision (2026): a dedicated deterministic stream prevents VIPV
+        // cohort selection from perturbing unrelated MATSim randomness.
+        Random rnd = PvRandomUtils.newComponentRandom(globalSeed, "pv-cohort-selection");
 
         pvVehicles = PvVehicleCsvLoader.loadOrSample(
                 cfg.getPvVehiclesFile(),

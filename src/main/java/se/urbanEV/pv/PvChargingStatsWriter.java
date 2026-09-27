@@ -7,6 +7,8 @@ import org.matsim.core.controler.listener.IterationEndsListener;
 
 import javax.inject.Inject;
 import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -29,7 +31,9 @@ public final class PvChargingStatsWriter implements IterationEndsListener {
 
     @Override
     public void notifyIterationEnds(IterationEndsEvent event) {
-        List<PvChargingIntervalEvent> rows = collector.drain();
+        // Revision (2026): retain the in-memory snapshot until the complete
+        // file is written; an output failure now fails the research run.
+        List<PvChargingIntervalEvent> rows = collector.snapshot();
 
         String fn = io.getIterationFilename(event.getIteration(), "pv_charging_instances.csv");
         Path out = Path.of(fn);
@@ -41,10 +45,11 @@ public final class PvChargingStatsWriter implements IterationEndsListener {
                         + r.getMode() + "," + r.getEnergyProduced_kWh() + "," + r.getEnergyStored_kWh() + ","
                         + r.getEnergyWasted_kWh() + "," + r.getStartSoc_frac() + "," + r.getEndSoc_frac() + "\n");
             }
-        } catch (Exception ex) {
-            log.error("Failed writing PV charging instances: " + out + " (" + ex.getMessage() + ")");
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Failed writing PV charging instances: " + out, ex);
         }
 
+        collector.clear();
         log.info("PV stats: wrote " + rows.size() + " PV charging intervals to " + out);
     }
 }

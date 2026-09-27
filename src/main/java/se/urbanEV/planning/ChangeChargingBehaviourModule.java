@@ -1,10 +1,7 @@
 package se.urbanEV.planning;
 
 import se.urbanEV.config.UrbanEVConfigGroup;
-import se.urbanEV.scoring.ChargingBehaviourScoringEvent;
-import se.urbanEV.scoring.ChargingBehaviourScoringEventHandler;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.api.core.v01.replanning.PlanStrategyModule;
 import org.matsim.core.replanning.ReplanningContext;
@@ -12,23 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class ChangeChargingBehaviourModule implements PlanStrategyModule, ChargingBehaviourScoringEventHandler {
+public class ChangeChargingBehaviourModule implements PlanStrategyModule {
 
     private static final String CHARGING_IDENTIFIER = " charging";
     private static final String CHARGING_FAILED_IDENTIFIER = " charging failed";
     private final Random random = org.matsim.core.gbl.MatsimRandom.getLocalInstance();
-    private Scenario scenario;
-    private Network network;
-    private Population population;
     private UrbanEVConfigGroup evCfg;
     private int maxNumberSimultaneousPlanChanges;
     private Double timeAdjustmentProbability;
     private int maxTimeFlexibility;
 
     ChangeChargingBehaviourModule(Scenario scenario) {
-        this.scenario = scenario;
-        this.network = this.scenario.getNetwork();
-        this.population = this.scenario.getPopulation();
         this.evCfg = (UrbanEVConfigGroup) scenario.getConfig().getModules().get("urban_ev");
         this.maxNumberSimultaneousPlanChanges = evCfg.getMaxNumberSimultaneousPlanChanges();
         this.timeAdjustmentProbability = evCfg.getTimeAdjustmentProbability();
@@ -188,60 +179,4 @@ public class ChangeChargingBehaviourModule implements PlanStrategyModule, Chargi
     public void prepareReplanning(ReplanningContext replanningContext) {
     }
 
-    @Override
-    public void handleEvent(ChargingBehaviourScoringEvent event) {
-        // 1) Ignore synthetic "cost-only" events from VehicleChargingHandler
-        //    (these are only for monetary scoring and should not drive replanning).
-        if (event.isCostOnly()) {
-            return;
-        }
-
-        // 2) Null guards: if SOC or startSOC is missing, do not touch subpopulation.
-        Double socObj = event.getSoc();
-        Double startSocObj = event.getStartSoc();
-        String actType = event.getActivityType();
-
-        if (socObj == null || startSocObj == null || actType == null) {
-            return;
-        }
-
-        double soc = socObj;
-        double startSoc = startSocObj;
-        boolean isLastAct = actType.contains("end");
-
-        // 3) Critical if:
-        //    - battery is empty at any scoring event, OR
-        //    - at the last activity, SOC dropped far from start SOC in a "bad" way.
-        boolean isCritical;
-
-        if (soc <= 0.0) {
-            // Empty battery → always critical.
-            isCritical = true;
-        } else if (isLastAct) {
-            double deltaSoc = Math.abs(soc - startSoc);
-            // Use a probabilistic threshold as before, but keep it bounded and explicit.
-            double threshold = random.nextDouble();
-            isCritical = deltaSoc > threshold;
-        } else {
-            // Intermediate activities are not decisive for (non-)critical classification.
-            isCritical = false;
-        }
-
-        Person person = population.getPersons().get(event.getPersonId());
-        if (person == null) {
-            return;
-        }
-
-        if (isCritical) {
-            // Mark agent as "criticalSOC" → always replanned via strategy settings.
-            person.getAttributes().putAttribute("subpopulation", "criticalSOC");
-        } else {
-            // Reset to default "nonCriticalSOC" for standard replanning probability.
-            person.getAttributes().putAttribute("subpopulation", "nonCriticalSOC");
-        }
-    }
-
-    @Override
-    public void reset(int iteration) {
-    }
 }

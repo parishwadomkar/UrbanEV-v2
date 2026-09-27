@@ -55,5 +55,5 @@ public interface Battery {
 		setSoc(Math.max(0, Math.min(getSoc() + energy, getCapacity())));
 	}
 
-	double getStartSoc(); // in kWh
+	double getStartSoc(); // in J
 }

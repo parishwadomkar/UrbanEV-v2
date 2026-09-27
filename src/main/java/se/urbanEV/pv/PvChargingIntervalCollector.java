@@ -18,9 +18,11 @@ public final class PvChargingIntervalCollector implements PvChargingIntervalEven
         events.add(event);
     }
 
-    public synchronized List<PvChargingIntervalEvent> drain() {
-        List<PvChargingIntervalEvent> out = new ArrayList<>(events);
+    public synchronized List<PvChargingIntervalEvent> snapshot() {
+        return new ArrayList<>(events);
+    }
+
+    public synchronized void clear() {
         events.clear();
-        return out;
     }
 }

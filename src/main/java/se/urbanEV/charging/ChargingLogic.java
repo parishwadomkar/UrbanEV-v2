@@ -45,9 +45,23 @@ public interface ChargingLogic {
 
 	void removeVehicle(ElectricVehicle ev, double now);
 
+	/**
+	 * Removes a vehicle because the QSim horizon was reached. Implementations
+	 * may use this explicit cause to mark right-censored charging statistics.
+	 */
+	default void removeVehicleAtSimulationHorizon(ElectricVehicle ev, double now) {
+		removeVehicle(ev, now);
+	}
+
 	void chargeVehicles(double chargePeriod, double now);
 
 	Collection<ElectricVehicle> getPluggedVehicles();
+
+	/**
+	 * Vehicles that are still receiving grid energy.  This excludes vehicles
+	 * that remain plugged after their charging strategy has completed.
+	 */
+	Collection<ElectricVehicle> getChargingVehicles();
 
 	ChargingStrategy getChargingStrategy();
 }

@@ -1,34 +1,20 @@
 package se.urbanEV.pv;
 
-import com.google.inject.Inject;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.mobsim.qsim.AbstractQSimModule;
 import se.urbanEV.EvModule;
-import se.urbanEV.config.UrbanEVConfigGroup;
 
 /**
  * Vehicle Integrated Photovoltaic (VIPV)
  * created by OmkarP.(2026)
  */
 public final class PvModule extends AbstractModule {
-
-    @Inject private UrbanEVConfigGroup cfg;
-
     @Override
     public void install() {
-
-        boolean pvEnabled =
-                cfg != null &&
-                        cfg.getPvWp() > 0.0 &&
-                        (
-                                (cfg.getPvVehiclesFile() != null && !cfg.getPvVehiclesFile().trim().isEmpty())
-                                        || cfg.getPvShare() > 0.0
-                        );
-
-        if (!pvEnabled) {
-            return;
-        }
-
+        // Revision (2026): these bindings must also exist for noVIPV controls.
+        // Charging and discharging handlers synchronize through
+        // PvGenerationHandler unconditionally. With pvWp=0 and an empty
+        // registry, the handler is an inert no-op service.
         bind(PvVehicleRegistry.class).asEagerSingleton();
         addControlerListenerBinding().to(PvVehicleRegistry.class);
 

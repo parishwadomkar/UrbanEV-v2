@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import se.urbanEV.MobsimScopeEventHandling;
 import se.urbanEV.fleet.ElectricFleet;
 import se.urbanEV.fleet.ElectricVehicle;
+import se.urbanEV.pv.PvGenerationHandler;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
@@ -76,14 +77,17 @@ public class DriveDischargingHandler
 	private final Network network;
 	private final Map<Id<ElectricVehicle>, ? extends ElectricVehicle> eVehicles;
 	private final Map<Id<Vehicle>, EvDrive> evDrives;
+	private final PvGenerationHandler pvGenerationHandler;
 	private Map<Id<Link>, Double> energyConsumptionPerLink = new HashMap<>();
 
 	@Inject
 	public DriveDischargingHandler(ElectricFleet data, Network network, EvConfigGroup evCfg,
-                                   MobsimScopeEventHandling events) {
+                                   MobsimScopeEventHandling events,
+                                   PvGenerationHandler pvGenerationHandler) {
 		this.network = network;
 		eVehicles = data.getElectricVehicles();
 		evDrives = new HashMap<>(eVehicles.size() / 10);
+		this.pvGenerationHandler = pvGenerationHandler;
 		events.addMobsimScopeHandler(this);
 	}
 
@@ -122,6 +126,11 @@ public class DriveDischargingHandler
 			Link link = network.getLinks().get(linkId);
 			double tt = eventTime - evDrive.movedOverNodeTime;
 			ElectricVehicle ev = evDrive.ev;
+
+			// Revision (2026): synchronize analytically integrated driving-PV at
+			// every link boundary.  This retains the SoC interaction with traction
+			// consumption without scanning the complete VIPV fleet each second.
+			pvGenerationHandler.integrateVehicleTo(ev, eventTime);
 			double energy = ev.getDriveEnergyConsumption().calcEnergyConsumption(link, tt, eventTime - tt)
 					+ ev.getAuxEnergyConsumption().calcEnergyConsumption(eventTime - tt, tt, linkId);
 			//Energy consumption might be negative on links with negative slope

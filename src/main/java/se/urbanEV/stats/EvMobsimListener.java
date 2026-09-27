@@ -33,6 +33,7 @@ package se.urbanEV.stats;
 import com.google.inject.Inject;
 import se.urbanEV.discharging.DriveDischargingHandler;
 import se.urbanEV.scoring.ChargingBehaviourScoring;
+import se.urbanEV.scoring.TerminalSocScoringHandler;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.matsim.api.core.v01.Id;
@@ -69,9 +70,14 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 	IterationCounter iterationCounter;
 	@Inject
 	Network network;
+	@Inject
+	TerminalSocScoringHandler terminalSocScoringHandler;
 
 	@Override
 	public void notifyMobsimBeforeCleanup(MobsimBeforeCleanupEvent event) {
+		// Guarantee that terminal energy-balance scores are part of this
+		// iteration's statistics, independently of listener registration order.
+		terminalSocScoringHandler.emitTerminalSocScores();
 
 		// Retrieve ChargingBehaviorScoresCollector Singleton
 		ChargingBehaviorScoresCollector chargingBehaviorScoresCollector = ChargingBehaviorScoresCollector.getInstance();
@@ -119,10 +125,18 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 							"basePrice_SEK_per_kWh",
 							"avgTouMultiplier",
 							"effectivePrice_SEK_per_kWh",
-							"chargingCost_SEK"
+							"chargingCost_SEK",
+							"chargingEndAtSimulationHorizon",
+							"unplugAtSimulationHorizon",
+							"sessionStatus"
 					));
 
 			for (ChargingLogEntry e : chargerPowerCollector.getLogList()) {
+				boolean chargingEndAtHorizon = e.isChargingEndAtSimulationHorizon();
+				boolean unplugAtHorizon = e.isUnplugAtSimulationHorizon();
+				boolean endAtRightHorizonBoundary = chargingEndAtHorizon
+						|| (unplugAtHorizon
+						&& Math.abs(e.getEndTime() - e.getUnplugTime()) <= 1e-6);
 				csvPrinter.printRecord(
 						e.getCharger().getId().toString(),
 						e.getCharger().getCoord().getX(),
@@ -135,12 +149,12 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 						Time.writeTime(e.getEndTime()),
 						Time.writeTime(e.getEndTime()%SECS_PER_DAY),
 						Double.toString(e.getEndTime()),
-						Integer.toString((int) e.getEndTime()/SECS_PER_DAY+1),
+						Integer.toString(reportingDay(e.getEndTime(), endAtRightHorizonBoundary)),
 						Double.toString(e.getChargingDuration()),
 						Time.writeTime(e.getUnplugTime()),
 						Time.writeTime(e.getUnplugTime()%SECS_PER_DAY),
 						Double.toString(e.getUnplugTime()),
-						Integer.toString((int) e.getUnplugTime()/SECS_PER_DAY+1),
+						Integer.toString(reportingDay(e.getUnplugTime(), unplugAtHorizon)),
 						Double.toString(e.getPluggedDuration()),
 						Double.toString(Math.round(e.getChargingRatio()*1000.0)/1000.0),
 						Double.toString(Math.round(e.getStartSOC()*1000.0)/1000.0),
@@ -153,18 +167,40 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 						Double.toString(round6(e.getBasePricePerKWh())),
 						Double.toString(round6(e.getAverageTouMultiplier())),
 						Double.toString(round6(e.getEffectivePricePerKWh())),
-						Double.toString(round6(e.getChargingCost()))
+						Double.toString(round6(e.getChargingCost())),
+						Boolean.toString(chargingEndAtHorizon),
+						Boolean.toString(unplugAtHorizon),
+						sessionStatus(chargingEndAtHorizon, unplugAtHorizon)
 						);
 			}
 
 			csvPrinter.close();
-	}
+		}
 		catch (RuntimeException e){
 		e.printStackTrace();
 	}
 		catch (IOException io){
 		io.printStackTrace();
 	}
+	}
+
+	private static int reportingDay(double time, boolean atSimulationHorizon) {
+		if (atSimulationHorizon && time > 0.0) {
+			return Math.max(1, (int) Math.ceil(time / SECS_PER_DAY));
+		}
+		return (int) (time / SECS_PER_DAY) + 1;
+	}
+
+	private static String sessionStatus(
+			boolean chargingEndAtHorizon,
+			boolean unplugAtHorizon) {
+		if (chargingEndAtHorizon) {
+			return "charging_truncated_at_horizon";
+		}
+		if (unplugAtHorizon) {
+			return "parking_truncated_at_horizon";
+		}
+		return "completed";
 	}
 
 	private void writeLinkEnergyStats(){
@@ -217,7 +253,10 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 						"meanHomeCharging",
 						"sumEnergyBalance",
 						"energyBalanceScoringPersons",
-						"meanEnergyBalance"
+						"meanEnergyBalance",
+						"sumChargingCost",
+						"chargingCostScoringPersons",
+						"meanChargingCost"
 				));
 			} else {
 				csvPrinter = new CSVPrinter(Files.newBufferedWriter(Paths.get(controlerIO.getOutputPath(), "scoringComponents.csv"), StandardOpenOption.APPEND), CSVFormat.DEFAULT.withDelimiter(';'));
@@ -240,7 +279,10 @@ public class EvMobsimListener implements MobsimBeforeCleanupListener {
 					Double.toString(chargingBehaviorScoresCollector.getComponentMean(ChargingBehaviourScoring.ScoreComponents.HOME_CHARGING)), 							// mean HOME_CHARGING
 					Double.toString(chargingBehaviorScoresCollector.getComponentSum(ChargingBehaviourScoring.ScoreComponents.ENERGY_BALANCE)), 							// sum ENERGY_BALANCE
 					Double.toString(chargingBehaviorScoresCollector.getNumberOfScoringPersonsForComponent(ChargingBehaviourScoring.ScoreComponents.ENERGY_BALANCE)), 	// number of persons scoring ENERGY_BALANCE
-					Double.toString(chargingBehaviorScoresCollector.getComponentMean(ChargingBehaviourScoring.ScoreComponents.ENERGY_BALANCE)) 							// mean ENERGY_BALANCE
+					Double.toString(chargingBehaviorScoresCollector.getComponentMean(ChargingBehaviourScoring.ScoreComponents.ENERGY_BALANCE)), 							// mean ENERGY_BALANCE
+					Double.toString(chargingBehaviorScoresCollector.getComponentSum(ChargingBehaviourScoring.ScoreComponents.CHARGING_COST)),
+					Double.toString(chargingBehaviorScoresCollector.getNumberOfScoringPersonsForComponent(ChargingBehaviourScoring.ScoreComponents.CHARGING_COST)),
+					Double.toString(chargingBehaviorScoresCollector.getComponentMean(ChargingBehaviourScoring.ScoreComponents.CHARGING_COST))
 			);
 
 

@@ -131,6 +131,8 @@ public class ChargerPowerCollector
         chargingProcess.setChargingDuration(
                 event.getCharging_duration()
         );
+        chargingProcess.setChargingEndAtSimulationHorizon(
+                event.isSimulationHorizonClosure());
 
         // Grid/charger-delivered energy only. Rooftop-PV energy is not included.
         double gridEnergy_J =
@@ -181,6 +183,8 @@ public class ChargerPowerCollector
         }
 
         chargingProcess.setUnplugTime(event.getTime());
+        chargingProcess.setUnplugAtSimulationHorizon(
+                event.isSimulationHorizonClosure());
 
         double startTime = chargingProcess.getStartTime();
         double unplugTime = chargingProcess.getUnplugTime();

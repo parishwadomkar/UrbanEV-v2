@@ -56,3 +56,7 @@ outputs/videos/raw/
 !outputs/**
 !models/
 !models/**
+
+# Keep raw source data local.
+data/raw/
+data/raw/**
