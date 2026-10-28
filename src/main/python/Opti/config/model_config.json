@@ -9,10 +9,12 @@
   "time_slots_per_day": 48,
   "slot_hours": 0.5,
   "rho_half_hours_per_hour": 2,
-  "parking_capacity_add": 15,
-  "home_charger_add": 5,
   "penalty_per_kwh_slack": 18500.0,
-  "charger_resources": {"slow": 1,"medium": 5,"fast": 150},
+  "charger_resources": {
+    "slow": 1,
+    "medium": 5,
+    "fast": 150
+  },
   "discount_rate": 0.06,
   "asset_specs": {
     "slow": {
@@ -69,5 +71,10 @@
   "vat": 0.25,
   "electricity_tax_sek_per_kwh": 0.375,
   "grid_fee_sek_per_kwh": 0.45,
-  "retail_markup_sek_per_kwh": 0.02
+  "retail_markup_sek_per_kwh": 0.02,
+  "work_charging_policy": "reject",
+  "missing_demand_policy": "error",
+  "require_data_provenance": false,
+  "pvgis_input_timezone": "as_supplied",
+  "bess_boundary": "legacy_linked_months"
 }

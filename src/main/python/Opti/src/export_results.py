@@ -1,4 +1,6 @@
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
+from energy_accounting import energy_boundary_metrics
 
 from pathlib import Path
 import pandas as pd
@@ -125,6 +127,7 @@ def compute_core_metrics(model, data: dict, cfg: dict) -> dict:
         "PV_panels_installed": sum(sv(model.PV[i]) for i in model.I),
         "battery_units_installed": sum(sv(model.Batt[i]) for i in model.I),
     }
+    rows.update(energy_boundary_metrics(model, data, cfg))
     for c in PUB_TYPES:
         installed = sum(sv(model.x[i, c]) for i in model.I)
         energy_c = sum(N_MONTH[mon] * sv(model.edisp[i, mon, t, c, b]) for i in model.I for mon in model.M for t in model.H for b in model.B)
@@ -534,7 +537,7 @@ def export_all(model, data: dict, cfg: dict, run_dir: Path) -> dict[str, pd.Data
 
 def print_summary(model, data: dict, cfg: dict) -> None:
     metrics = compute_core_metrics(model, data, cfg)
-    print("\n================  OPTIMAL ANNUAL PROFIT  ================")
+    print("\n================  FEASIBLE ANNUAL PROFIT  ================")
     print(f"Total profit : {metrics['annual_profit_SEK']:,.0f} SEK / yr\n")
     print("==================  BREAKDOWN  =================")
     print(f"Revenue (all chargers)             : {metrics['revenue_all_chargers_SEK']:>13,.0f}")

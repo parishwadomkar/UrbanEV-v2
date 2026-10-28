@@ -1,10 +1,10 @@
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
 
 from collections import defaultdict
-import math
-import networkx as nx
 import numpy as np
 import pandas as pd
+from input_validation import validate_inputs, align_pvgis_clock, numeric
 
 MONTHS = [
     "January", "February", "March", "April", "May", "June",
@@ -50,13 +50,13 @@ def build_tou(spot_df: pd.DataFrame, cfg: dict) -> dict:
     missing = [c for c in required if c not in spot_df.columns]
     if missing:
         raise ValueError(f"ElPrice.csv is missing month columns: {missing}")
-    if len(spot_df.index) < 24:
-        raise ValueError("ElPrice.csv must contain at least 24 hourly rows (0,...,23).")
+    if len(spot_df.index) != 24:
+        raise ValueError("ElPrice.csv must contain exactly 24 hourly rows (0,...,23).")
 
-    clean = spot_df.copy()
+    clean = spot_df.copy().reset_index(drop=True)
     for col in required:
         clean[col] = pd.to_numeric(clean[col], errors="coerce")
-        if clean[col].iloc[:24].isna().any():
+        if not np.isfinite(clean[col].to_numpy(dtype=float)).all():
             raise ValueError(f"ElPrice.csv contains non-numeric/missing values in the first 24 rows of column {col}.")
 
     return {
@@ -66,6 +66,8 @@ def build_tou(spot_df: pd.DataFrame, cfg: dict) -> dict:
 
 
 def pvf_daily(r: float, n: int) -> float:
+    if r == 0:
+        return 1.0 / n / 365.0
     return (r * (1 + r) ** n) / ((1 + r) ** n - 1) / 365.0
 
 
@@ -94,7 +96,7 @@ def _coerce_localized_numeric(series: pd.Series, label: str) -> pd.Series:
         )
         out = pd.to_numeric(cleaned, errors="coerce")
 
-    bad = out.isna()
+    bad = ~np.isfinite(out.to_numpy(dtype=float))
     if bad.any():
         examples = series.loc[bad].astype(str).head(5).tolist()
         raise ValueError(
@@ -154,9 +156,9 @@ def build_pvgis_monthly_hourly_cf(pvgis_df: pd.DataFrame, cfg: dict):
     if missing:
         raise ValueError(f"PVGIS file is missing required columns: {missing}")
 
-    df = pvgis_df.copy()
-    df["month"] = _coerce_localized_numeric(df["month"], "PVGIS month").astype(int)
-    df["hour"] = _coerce_localized_numeric(df["hour"], "PVGIS hour").astype(int)
+    df = align_pvgis_clock(pvgis_df, cfg)
+    for column in ["year", "month", "date", "hour"]:
+        df[column] = numeric(df, column, integer=True)
     df[power_col] = _coerce_localized_numeric(
         df[power_col], f"PVGIS column {power_col!r}"
     )
@@ -191,9 +193,11 @@ def build_pvgis_monthly_hourly_cf(pvgis_df: pd.DataFrame, cfg: dict):
     full_idx = pd.MultiIndex.from_product([range(1, 13), range(0, 24)], names=["month", "hour"])
     monthly_hourly = (
         monthly_hourly.set_index(["month", "hour"])
-        .reindex(full_idx, fill_value=0.0)
+        .reindex(full_idx)
         .reset_index()
     )
+    if monthly_hourly[["cf", "avg_power_w"]].isna().any().any():
+        raise ValueError("PVGIS must provide all 12 months and 24 hours; missing values cannot be assumed zero.")
     monthly_hourly["cf"] = monthly_hourly["cf"].clip(0.0, 1.0)
 
     cf_lookup = {
@@ -254,26 +258,15 @@ def get_distance_dict(dist_df: pd.DataFrame) -> dict:
 
 
 def preprocess(raw: dict, cfg: dict) -> dict:
-    gdf = raw["gdf"].copy()
-    parking_gdf = raw["parking_gdf"].copy()
-    dist_df = raw["dist_df"].copy()
+    gdf, parking_gdf, dist_df = validate_inputs(raw, cfg)
     spot_df = raw["spot_df"].copy()
     pvgis_df = raw["pvgis_df"].copy()
 
-    gdf["HexID"] = gdf["HexID"].astype(int)
-    gdf["charType"] = gdf["charType"].astype(str).str.lower().str.strip()
     hex_ids = sorted(gdf["HexID"].unique())
     time_indices = sorted(gdf["TimeIndex"].astype(int).unique())
 
-    parking_gdf["HexID"] = parking_gdf["HexID"].astype(int)
-    parking_gdf["ParkingCap"] = parking_gdf["ParkingCap"]/2.0 + int(cfg["parking_capacity_add"])
-    parking_gdf["homeChar"] = parking_gdf["homeChar"] + int(cfg["home_charger_add"])
-
-    cl = parking_gdf.set_index("HexID")["ParkingCap"].to_dict()
+    cl = parking_gdf.set_index("HexID")["PublicRes"].to_dict()
     home_avail = parking_gdf.set_index("HexID")["homeChar"].to_dict()
-    for i in hex_ids:
-        cl.setdefault(int(i), 0)
-        home_avail.setdefault(int(i), 0)
 
     charger_capacity = cfg["charger_capacity_kwh_per_slot"]
     charger_capacity_pub = {c: float(charger_capacity[c]) for c in PUB_TYPES}
@@ -314,54 +307,16 @@ def preprocess(raw: dict, cfg: dict) -> dict:
     beta = float(cfg["value_time_sek_per_h"]) * (1.0 / float(cfg["speed_car_kmh"]) + 2.0 / float(cfg["speed_walk_kmh"]))
     t_dict = {(i, j): beta * dist_dict[(i, j)] for (i, j) in allowed}
 
-    seasonal_demand_enabled = "Season" in gdf.columns
-    if seasonal_demand_enabled:
-        gdf["Season"] = gdf["Season"].astype(str).str.upper().str.strip()
-        observed_seasons = set(gdf["Season"].dropna().unique())
-        unknown_seasons = observed_seasons - set(SEASON_TO_MONTHS)
-        if unknown_seasons:
-            raise ValueError(f"Demand GeoPackage contains unrecognized Season values: {sorted(unknown_seasons)}")
-        missing_seasons = set(SEASON_TO_MONTHS) - observed_seasons
-        if missing_seasons:
-            raise ValueError(
-                "Season-specific optimization demand must contain all four seasons. "
-                f"Missing: {sorted(missing_seasons)}"
-            )
-        grp = (
-            gdf[["Season", "HexID", "TimeIndex", "Demand", "charType"]]
-            .groupby(["Season", "HexID", "TimeIndex", "charType"], as_index=False)["Demand"]
-            .sum()
-        )
-        home_profile = defaultdict(float)
-        public_profile = defaultdict(float)
-        for r in grp.itertuples(index=False):
-            key = (str(r.Season), int(r.HexID), int(r.TimeIndex))
-            if str(r.charType) == "home":
-                home_profile[key] += float(r.Demand)
-            else:
-                public_profile[key] += float(r.Demand)
+    home_profile = {}
+    public_profile = {}
+    for row in gdf.itertuples(index=False):
+        key = (str(row.Season), int(row.HexID), int(row.TimeIndex))
+        target = home_profile if str(row.charType) == "home" else public_profile
+        target[key] = float(row.Demand)
 
-        def source_demand(i: int, mon: str, t: int, char_type: str) -> float:
-            key = (MONTH_TO_SEASON[mon], int(i), int(t))
-            return float(home_profile[key] if char_type == "home" else public_profile[key])
-    else:
-        grp = (
-            gdf[["HexID", "TimeIndex", "Demand", "charType"]]
-            .groupby(["HexID", "TimeIndex", "charType"], as_index=False)["Demand"]
-            .sum()
-        )
-        home_profile = defaultdict(float)
-        public_profile = defaultdict(float)
-        for r in grp.itertuples(index=False):
-            key = (int(r.HexID), int(r.TimeIndex))
-            if str(r.charType) == "home":
-                home_profile[key] += float(r.Demand)
-            else:
-                public_profile[key] += float(r.Demand)
-
-        def source_demand(i: int, mon: str, t: int, char_type: str) -> float:
-            key = (int(i), int(t))
-            return float(home_profile[key] if char_type == "home" else public_profile[key])
+    def source_demand(i: int, mon: str, t: int, char_type: str) -> float:
+        key = (MONTH_TO_SEASON[mon], int(i), int(t))
+        return home_profile[key] if char_type == "home" else public_profile[key]
 
     home_kwh_per_slot = float(charger_capacity["home"])
     home_demand_total_event = {}
@@ -381,9 +336,6 @@ def preprocess(raw: dict, cfg: dict) -> dict:
                 home_private_served_event[(int(i), mon, int(t))] = private_served
                 demand_event_annual[(int(i), mon, int(t), "home")] = residual_home
                 demand_event_annual[(int(i), mon, int(t), "public")] = raw_public
-
-    # Backward-compatible alias; all current optimization code should use demand_event_annual.
-    demand_event = demand_event_annual
 
     seasonal_diag_rows = []
     for season, months in SEASON_TO_MONTHS.items():
@@ -433,23 +385,7 @@ def preprocess(raw: dict, cfg: dict) -> dict:
         if arc_active(i, j, mon, t)
     }
 
-    g = nx.Graph()
-    g.add_nodes_from(hex_ids)
-    g.add_edges_from(allowed)
-    pub_demand = {
-        i: sum(demand_event_annual[(int(i), mon, int(t), "public")] for mon in MONTHS for t in time_indices)
-        for i in hex_ids
-    }
-    for comp in nx.connected_components(g):
-        if any(pub_demand[i] > 0 for i in comp) and all(cl[i] == 0 for i in comp):
-            i_star = max(comp, key=lambda i: pub_demand[i])
-            cl[i_star] = 2
-
-    if "Panels" not in parking_gdf.columns:
-        raise KeyError("Parking shapefile must contain a 'Panels' column for PV upper bounds.")
     pv_upper = parking_gdf.set_index("HexID")["Panels"].to_dict()
-    for i in hex_ids:
-        pv_upper.setdefault(int(i), 0)
 
     out = defaultdict(list)
     incoming = defaultdict(list)
@@ -466,6 +402,8 @@ def preprocess(raw: dict, cfg: dict) -> dict:
     m_redir = {int(j): float(max_k_per_resource * cl[int(j)]) for j in hex_ids}
 
     return {
+        "provenance": raw.get("provenance", {}),
+        "input_paths": raw.get("paths", {}),
         "MONTHS": MONTHS,
         "N_MONTH": N_MONTH,
         "DAYS": DAYS,
@@ -479,9 +417,9 @@ def preprocess(raw: dict, cfg: dict) -> dict:
         "home_avail": home_avail,
         "home_demand_total_event": home_demand_total_event,
         "home_private_served_event": home_private_served_event,
-        "demand_event": demand_event,
+        "demand_event": demand_event_annual,
         "demand_event_annual": demand_event_annual,
-        "seasonal_demand_enabled": seasonal_demand_enabled,
+        "seasonal_demand_enabled": True,
         "month_to_season": dict(MONTH_TO_SEASON),
         "allowed": sorted(allowed),
         "allowed_st": sorted(allowed_st),

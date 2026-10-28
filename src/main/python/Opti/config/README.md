@@ -1,35 +1,37 @@
-# Configuration files
+# Configuration and input contract
 
-`solver_gurobi.json` contains settings shared by all methods. `run_profiles.json` contains calibrated method- and dataset-specific settings. Values supplied on the command line take precedence over both files.
+| File | Purpose |
+| --- | --- |
+| `paths.json` | Dataset/treatment selection, input paths, and run root |
+| `model_config.json` | Economic coefficients, service rates, asset limits, and model policies |
+| `solver_gurobi.json` | Base Gurobi settings |
+| `run_profiles.json` | Method/dataset defaults for unset command-line options |
 
-## VIPV scenario data layout
+Explicit command-line values override profile defaults. Relative input paths are resolved from Opti. `{vipv_scenario}` selects the demand treatment; each configured case must provide all required inputs.
 
-The optimization inputs are resolved from `config/paths.json` using both dataset size and VIPV scenario. The expected layout is:
+## Required inputs
 
-```text
-data/
-  ElPrice.csv
-  PVGISdata.csv
-  small/<VIPV_SCENARIO>/
-    demandHexGrid_optimization_shrunk30.gpkg
-    shortestpath.csv
-    CharParksmall.shp (+ shapefile sidecars)
-  full/<VIPV_SCENARIO>/
-    demandHexGrid_optimization_full.gpkg
-    shortestpath.csv
-    CharParkfull.shp (+ shapefile sidecars)
-```
+| Input | Required fields and units |
+| --- | --- |
+| Seasonal demand layer | `Season`, `HexID`, `TimeIndex`, `charType`, `Demand`; kWh per half-hour interval |
+| Installation-capacity layer | `HexID`, `PublicRes`, `homeChar`, `Panels` |
+| Shortest-path CSV | `from_HexID`, `to_HexID`, `distance`; metres |
+| PVGIS table | `year`, `month`, `date`, `hour`, configured power column; `date` is day of month |
+| Spot-price CSV | `Jan` through `Dec`; 24 ordered hourly rows; öre/kWh |
 
-The ten accepted scenario names are `noVIPV`, `VIPV20_Wp400`, `VIPV20_Wp700`, `VIPV20_Wp1000`, `VIPV50_Wp400`, `VIPV50_Wp700`, `VIPV50_Wp1000`, `VIPV80_Wp400`, `VIPV80_Wp700`, and `VIPV80_Wp1000`.
+Demand seasons are `WINTER`, `SPRING`, `SUMMER`, and `AUTUMN`; slots are 1–48; charging classes are `home` and `public`. The full season/cell/slot/class grid, including zeros, is required by default. Demand and capacity geometries must declare matching coordinate reference systems. Cell IDs must be integers; capacity records must have unique IDs. Values must be finite and nonnegative.
 
-Recommended CLI syntax is `--vipv-scenario VIPV50_Wp700 --dataset full`. Convenience syntax is also supported: `--VIPV50_Wp700 --full` or `--VIPV50_Wp700 full`. Existing scripts that do not specify a VIPV scenario continue to use the configured defaults (`noVIPV`, `small`).
+`PublicRes` is the final installation resource budget and may be fractional. `homeChar` and `Panels` are integer availability limits. Public charger counts are optimized subject to the configured resource weights. Input capacities are used directly. Retain the `.shp`, `.shx`, `.dbf`, and `.prj` files together, including `.cpg` when supplied.
 
-Run folders include the dataset and VIPV scenario names so results from the ten demand scenarios remain traceable.
+## Model policies
 
-## Seasonal annualization and PVGIS unit validation
+| Setting | Meaning |
+| --- | --- |
+| `work_charging_policy` | `reject`, or `merge_public` to include a supplied work category in public demand |
+| `missing_demand_policy` | `error`, or `explicit_zero` for intentionally sparse demand |
+| `require_data_provenance` | Require a registered source record when `true`; input hashes are recorded independently |
+| `pvgis_input_timezone` | `as_supplied`, `UTC`, or `Europe/Stockholm`; the demand and price clock must be consistent |
+| `pvgis_power_unit` | Explicit PVGIS unit: `W`, `kW`, or `cf` |
+| `bess_boundary` | `legacy_linked_months` or `cyclic_day` |
 
-If the demand GeoPackage contains a `Season` field, the optimizer requires all four labels and maps them as follows: `WINTER -> Dec/Jan/Feb`, `SPRING -> Mar/Apr/May`, `SUMMER -> Jun/Jul/Aug`, and `AUTUMN -> Sep/Oct/Nov`. The corresponding seasonal MATSim profile is used for each month and operating quantities are weighted with the exact number of days in that month.
-
-`ElPrice.csv` remains month-specific and is converted to the retail half-hour tariff used by the optimization. `PVGISdata.csv` remains month/hour-specific. `model_config.json` contains `pvgis_power_unit`. For the supplied Gothenburg `PVGISdata.csv`, this is set explicitly to `W`, because `500W_P` is the hourly electrical output in watts from a fixed 500 Wp panel. The CSV uses semicolon delimiters and decimal commas; `src/data_loader.py` parses these explicitly. This affects input parsing only; the MILP PV constraint and objective are unchanged.
-
-The smoke test now performs content validation after the ordinary path/import checks and reports the season mapping, detected PVGIS unit, implied annual stationary-PV yield, and retail ToU range. This is intended to catch scaling errors before a full MILP is constructed.
+Unknown model settings are rejected. See [model assumptions](../assets/MODEL_ASSUMPTIONS.md) for annual accounting and storage conventions, and the [main README](../README.md) for local resource settings and run commands.

@@ -1,5 +1,6 @@
 @echo off
 setlocal
+cd /d "%~dp0.."
 if "%~2"=="" (
   echo Usage: %~nx0 "runs\MONOLITHIC_RUN" "runs\LBBD_RUN"
   exit /b 2

@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    target-branch: VIPVmain
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      maven-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: pip
+    directory: /src/main/python/Opti
+    target-branch: VIPVmain
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      python-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: VIPVmain
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      github-actions:
+        patterns: ['*']

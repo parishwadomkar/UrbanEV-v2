@@ -70,7 +70,7 @@
         <param name="outputDirectory" value="output/1pct/1pct_WINTER_noVIPV_Wp0_open0" />
         <param name="overwriteFiles" value="deleteDirectoryIfExists" />
         <param name="firstIteration" value="0"/>
-        <param name="lastIteration" value="100"/>
+        <param name="lastIteration" value="200"/>
         <param name="eventsFileFormat" value="xml"/>
         <param name="mobsim" value="qsim"/>
         <param name="writeEventsInterval" value="5"/>

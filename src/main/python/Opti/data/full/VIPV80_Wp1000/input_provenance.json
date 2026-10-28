@@ -1,0 +1,128 @@
+{
+  "sample": "10pct",
+  "source_iteration": 100,
+  "scenario": "VIPV80_Wp1000",
+  "work_demand_policy": "merge_work_into_public",
+  "days": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "population_expansion": 10.0,
+  "half_hour_slots": 48,
+  "season_days_nonleap": {
+    "WINTER": 90,
+    "SPRING": 92,
+    "SUMMER": 92,
+    "AUTUMN": 91
+  },
+  "annualization_applied_in_notebook": false,
+  "dataset": "full",
+  "shrink_factor_per_bbox_side": 0.05,
+  "hex_count": 594,
+  "master_grid_sha256": "1029970eccf9000f20b9673ace16b9747e56b22b2e7f0491feb3ef2a09fcbf9b",
+  "static_gis_root": "C:\\Users\\omkarp\\IdeaProjects\\GotVIPV-v2\\src\\main\\python\\Opti\\data\\raw\\OptiData",
+  "static_gis_sha256": {
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.dbf": "4ce03de9131d2f5497af6020284e8cf49afd467460dcdc9c99a5b14cafab05c7",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.prj": "76097a1385e9ad53d4785952df5bc137e0984b5bea9c3f01af5f9d6fc4386e07",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.sbn": "b78450e78c1233c577d3fcb4c1786b5c82117532ce49d7f48ff26096c69638e5",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.sbx": "50cf2bad973dad41c990238321aa3a7332f734a75927aebda084edad0ef83659",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.shp": "2328edd92fd29e0a6af4f9632b317ca03247815173cc5bfb6df772837340f767",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.shp.xml": "1da48a01e47826f9da944e154f5d70af15a31cb3034a0fd102b7465f2dbefc07",
+    "data\\raw\\OptiData\\Solar\\shpfile\\IdealPVinstall.shx": "bd57fbfac577d9faf06e9eff30b7343310b04fac1de9f56b4ead3e34035222e0",
+    "data\\raw\\OptiData\\Parking\\GOTpark.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+    "data\\raw\\OptiData\\Parking\\GOTpark.dbf": "e49f4de62fbbdc234fde8141b88ec016b6e3dedcdbf379396f7aea270a5830df",
+    "data\\raw\\OptiData\\Parking\\GOTpark.prj": "76097a1385e9ad53d4785952df5bc137e0984b5bea9c3f01af5f9d6fc4386e07",
+    "data\\raw\\OptiData\\Parking\\GOTpark.sbn": "484138944a99e135d80c922ea58779e5c121ecca348ad7703a5accde28838df5",
+    "data\\raw\\OptiData\\Parking\\GOTpark.sbx": "82684e43cb4ca79bc6f2d108082fc9468acf423abf7f8312e4b0bce95b8a522f",
+    "data\\raw\\OptiData\\Parking\\GOTpark.shp": "7cc206515c7aef3f1ce90d28d0907bdd1c20306ba11e93c1090e22c629edc71c",
+    "data\\raw\\OptiData\\Parking\\GOTpark.shp.xml": "9f48dfbdee21dca985d4875822b69ce1884fac432d7b1d36cb992af9c8ec7627",
+    "data\\raw\\OptiData\\Parking\\GOTpark.shx": "ce9af639b4ae6b7c845fe4a8e82e2d30885b18d9a8cea32887d9fface1cab1b8",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.dbf": "a773ce4f624c841b7e2bcbfe30bbd6b250f2cc790c53ef91303d0211fe44858a",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.prj": "a02a27b1d1982c8516d83398e85a3c8b1aef1713c13ef4d84d7bde17430c07c4",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.sbn": "e7e520142ff14640e38d156695ae174637172c2292b994b102b158b4cb8c371b",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.sbx": "d56ef37ac42a4a22fabd24fc0f9abf8e86e7c85ed8cf37e11a0ad10d6d1fce5e",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.shp": "aaac76b81fc7dfabd014f2979c6a0606524fffa8fd3d9f808bd3db06158370c9",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.shp.xml": "d3c02fbbdaaf83f60bdce7d98bd1af1b6bbba56079df256e1875f219ce375842",
+    "data\\raw\\OptiData\\HomeCharging\\GOTbldgs.shx": "db5c8a03c43883b5647b8b4fb7ada03461d820f0d1ba96a2aa5f48bdca2fe94d",
+    "data\\raw\\OptiData\\Shortest\\GotRds.cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824",
+    "data\\raw\\OptiData\\Shortest\\GotRds.dbf": "be0e2e077fcd18fb2da2f62df520e6ca79884c920e92acaf0e5d813545f08920",
+    "data\\raw\\OptiData\\Shortest\\GotRds.prj": "a02a27b1d1982c8516d83398e85a3c8b1aef1713c13ef4d84d7bde17430c07c4",
+    "data\\raw\\OptiData\\Shortest\\GotRds.sbn": "4d48eec4ba43076a69f66ed1a359a50c568d6f4e505211b28b825fa4c658c4fb",
+    "data\\raw\\OptiData\\Shortest\\GotRds.sbx": "4c73084a837cc82349870d68be56b87d2e7977ef828e7409d8542353edcffef5",
+    "data\\raw\\OptiData\\Shortest\\GotRds.shp": "74aacb1624fe693fcb9810bb1a37473a1af229fa8378959b5725b9c811d1cd53",
+    "data\\raw\\OptiData\\Shortest\\GotRds.shx": "0bd72363a42871ec5a29eb9671aee52853f18a23d3542921d4398650dbf8b017"
+  },
+  "stationary_pvgis_sha256": "2fd3fc286e38f12e329071f1b7228d7b466cf91574cae54d63ddf053211f6659",
+  "spot_price_sha256": "1e978e91e8ba8ad72cc04f6019a6e0b845285d532139e1b6e32a330bb35a1c6a",
+  "seasonal_checks": [
+    {
+      "season": "SPRING",
+      "source_sha256": "03b9449f93280e87dd71ffae78b08f783968ef6f072760ba60299e9fa4922bc7",
+      "before_spatial_kwh_per_day": 543413.6578893086,
+      "retained_kwh_per_day": 517613.74997987226,
+      "excluded_kwh_per_day": 25799.907909436384,
+      "retained_share": 0.9525225258237957,
+      "unassigned_slot_rows": 3942,
+      "source_type_kwh_per_day": {
+        "home": 398764.54210799444,
+        "work": 52381.5325,
+        "public": 92267.58328131418
+      }
+    },
+    {
+      "season": "SUMMER",
+      "source_sha256": "a628bb577aecaf6c1d66da4f78443f87b3df989a3c4515fef28df74128b07f8d",
+      "before_spatial_kwh_per_day": 568063.526669624,
+      "retained_kwh_per_day": 539088.7085313792,
+      "excluded_kwh_per_day": 28974.818138244795,
+      "retained_share": 0.9489937009191297,
+      "unassigned_slot_rows": 4364,
+      "source_type_kwh_per_day": {
+        "home": 426145.2116696241,
+        "work": 47902.0325,
+        "public": 94016.2825
+      }
+    },
+    {
+      "season": "AUTUMN",
+      "source_sha256": "62fa4930f587a812b7778babaa66059a835f4ace4264c9a4013f9190dbf83841",
+      "before_spatial_kwh_per_day": 659342.1442842453,
+      "retained_kwh_per_day": 628450.6398690054,
+      "excluded_kwh_per_day": 30891.504415239906,
+      "retained_share": 0.9531479904886492,
+      "unassigned_slot_rows": 4649,
+      "source_type_kwh_per_day": {
+        "home": 503170.8046523092,
+        "work": 52060.6425,
+        "public": 104110.69713193616
+      }
+    },
+    {
+      "season": "WINTER",
+      "source_sha256": "16ffa9132b6f077c26ff3db74b4e6189aaceaa46a93a05d6aae7bb3e3fb71cc7",
+      "before_spatial_kwh_per_day": 690481.0469553267,
+      "retained_kwh_per_day": 658449.0555210995,
+      "excluded_kwh_per_day": 32031.99143422721,
+      "retained_share": 0.9536091662827356,
+      "unassigned_slot_rows": 4775,
+      "source_type_kwh_per_day": {
+        "home": 522130.9544553268,
+        "work": 56983.637500000004,
+        "public": 111366.455
+      }
+    }
+  ],
+  "input_schema": "final-capacity-v1",
+  "static_capacity_sha256": {
+    ".shp": "d0bc6c8cbbef6b431f49a6025b867e3071163d9cb0af74e16db60e28bb7a8f7c",
+    ".shx": "7635f9b1487f462c01fbba16eb85c14bba97bd13848389df96ceb224b5923a40",
+    ".dbf": "2c6c8b3fc39d87ba024f6ee4be31105d123ee235b2b5d87e3028845c458dcf49",
+    ".prj": "76097a1385e9ad53d4785952df5bc137e0984b5bea9c3f01af5f9d6fc4386e07",
+    ".cpg": "3ad3031f5503a4404af825262ee8232cc04d4ea6683d42c5dd0a2f2a27ac9824"
+  },
+  "optimizer_model_config_sha256": "0bbfc1980c3513dfe21c6634cf3f079546b21338a359eb69a5cfd7d117fbf639"
+}

@@ -1,5 +1,5 @@
 {
-  "default_dataset": "small",
+  "default_dataset": "full",
   "default_vipv_scenario": "noVIPV",
   "vipv_scenarios": [
     "noVIPV",
@@ -14,17 +14,12 @@
     "VIPV80_Wp1000"
   ],
   "datasets": {
-    "small": {
-      "demand_shapefile": "data/small/{vipv_scenario}/demandHexGrid_optimization_shrunk30.gpkg",
-      "distance_csv": "data/small/{vipv_scenario}/shortestpath.csv",
-      "parking_shapefile": "data/small/{vipv_scenario}/CharParksmall.shp"
-    },
-    "full": {
-      "demand_shapefile": "data/full/{vipv_scenario}/demandHexGrid_optimization_full.gpkg",
-      "distance_csv": "data/full/{vipv_scenario}/shortestpath.csv",
-      "parking_shapefile": "data/full/{vipv_scenario}/CharParkfull.shp"
-    }
-  },
+  "full": {
+    "demand_shapefile": "data/full/{vipv_scenario}/demandHexGrid_optimization_full.gpkg",
+    "distance_csv": "data/full/{vipv_scenario}/shortestpath.csv",
+    "parking_shapefile": "data/full/{vipv_scenario}/CharParkfull.shp"
+  }
+},
   "pvgis_file": "data/PVGISdata.csv",
   "spot_price_csv": "data/ElPrice.csv",
   "runs_root": "runs"

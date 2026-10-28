@@ -5,9 +5,10 @@ import math
 import re
 import threading
 import time
-from collections import Counter, defaultdict
+from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import pandas as pd
 
@@ -21,18 +22,27 @@ _NUM = r"[-+0-9.eE]+"
 
 
 class ResourceMonitor:
-    """Best-effort process-tree RSS monitor.
+    """Best-effort process-tree RSS monitor with a lightweight temporal trace.
 
-    Uses psutil when available. A missing psutil installation never prevents an
-    optimization run; memory fields are simply left blank.
+    The process tree (Python plus descendant solver processes) is sampled at
+    ``interval_seconds`` for peak detection.  A lower-frequency trace is retained
+    every ``trace_interval_seconds`` and written by ``write_run_complexity`` to
+    ``results/resource_usage.csv``.  Missing psutil never prevents an optimization
+    run; memory fields and the trace are simply unavailable.
     """
 
-    def __init__(self, interval_seconds: float = 0.5):
+    def __init__(self, interval_seconds: float = 0.5, trace_interval_seconds: float = 5.0):
         self.interval_seconds = max(0.1, float(interval_seconds))
+        self.trace_interval_seconds = max(self.interval_seconds, float(trace_interval_seconds))
         self.peak_rss_bytes = 0
         self.last_rss_bytes = 0
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._started_perf: float | None = None
+        self._last_trace_elapsed = -math.inf
+        self._trace_rows: list[tuple[str, float, float, str]] = []
+        self._phase = "run"
+        self._trace_lock = threading.Lock()
         try:
             import psutil  # type: ignore
             self._psutil = psutil
@@ -45,7 +55,10 @@ class ResourceMonitor:
     def available(self) -> bool:
         return self._process is not None
 
-    def _sample(self) -> int:
+    def set_phase(self, phase: str) -> None:
+        self._phase = str(phase or "run")
+
+    def _sample(self, force_trace: bool = False) -> int:
         if self._process is None:
             return 0
         total = 0
@@ -60,6 +73,19 @@ class ResourceMonitor:
                 pass
         self.last_rss_bytes = total
         self.peak_rss_bytes = max(self.peak_rss_bytes, total)
+
+        if self._started_perf is not None:
+            elapsed = max(0.0, time.perf_counter() - self._started_perf)
+            if force_trace or elapsed - self._last_trace_elapsed >= self.trace_interval_seconds:
+                row = (
+                    datetime.now(timezone.utc).isoformat(),
+                    float(elapsed),
+                    float(total / (1024.0 ** 2)),
+                    self._phase,
+                )
+                with self._trace_lock:
+                    self._trace_rows.append(row)
+                self._last_trace_elapsed = elapsed
         return total
 
     def _run(self) -> None:
@@ -68,7 +94,8 @@ class ResourceMonitor:
 
     def start(self) -> "ResourceMonitor":
         if self.available and self._thread is None:
-            self._sample()
+            self._started_perf = time.perf_counter()
+            self._sample(force_trace=True)
             self._thread = threading.Thread(target=self._run, name="resource-monitor", daemon=True)
             self._thread.start()
         return self
@@ -76,18 +103,43 @@ class ResourceMonitor:
     def stop(self) -> None:
         self._stop.set()
         if self._thread is not None:
-            self._thread.join(timeout=2.0)
-        self._sample()
+            self._thread.join(timeout=max(2.0, 2.0 * self.interval_seconds))
+        self._sample(force_trace=True)
 
-    def as_metrics(self) -> dict[str, float | None]:
+    def trace_frame(self) -> pd.DataFrame:
+        with self._trace_lock:
+            rows = list(self._trace_rows)
+        return pd.DataFrame(
+            rows,
+            columns=["timestamp", "elapsed_seconds", "process_tree_rss_MB", "phase"],
+        )
+
+    def write_trace(self, path: Path) -> Path | None:
+        if not self.available:
+            return None
+        frame = self.trace_frame()
+        if frame.empty:
+            return None
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        frame.to_csv(path, index=False)
+        return path
+
+    def as_metrics(self) -> dict[str, float | int | None]:
         if not self.available:
             return {
                 "peak_process_tree_rss_MB": None,
                 "final_process_tree_rss_MB": None,
+                "resource_trace_samples": None,
+                "resource_trace_interval_seconds": None,
             }
+        with self._trace_lock:
+            sample_count = len(self._trace_rows)
         return {
             "peak_process_tree_rss_MB": self.peak_rss_bytes / (1024.0 ** 2),
             "final_process_tree_rss_MB": self.last_rss_bytes / (1024.0 ** 2),
+            "resource_trace_samples": int(sample_count),
+            "resource_trace_interval_seconds": float(self.trace_interval_seconds),
         }
 
 
@@ -196,6 +248,8 @@ def preprocessing_scalars(data: dict) -> dict[str, Any]:
 def slot_redirection_complexity(data: dict) -> pd.DataFrame:
     c = len(data.get("PUB_TYPES", []))
     a = len(data.get("allowed_st", []))
+    o = len(data.get("ORIGIN_ST", []))
+    d = len(data.get("DEST_ST", []))
     slot_counts = _slot_arc_counts(data)
     max_slot_arcs = max(slot_counts) if slot_counts else 0
     rows = [
@@ -210,6 +264,18 @@ def slot_redirection_complexity(data: dict) -> pd.DataFrame:
             "Origin/destination marginal variables": 0,
             "Maximum type-pair variables in one slot": max_slot_arcs * c * c,
             "Notes": "All exact redirection and type-pair decisions are present simultaneously.",
+        },
+        {
+            "Method": "Benders",
+            "Model role": "Arc-witness master",
+            "Aggregate arc-flow variables": a,
+            "Type-pair arc-flow variables": 0,
+            "Arc activation binaries": a,
+            "Trip integer variables": a,
+            "Arc tail variables": a,
+            "Origin/destination marginal variables": (o + d) * c,
+            "Maximum type-pair variables in one slot": max_slot_arcs * c * c,
+            "Notes": "Type-pair variables are reconstructed in slot LP subproblems, not stored in the master.",
         },
         {
             "Method": "LBBD",
@@ -263,6 +329,8 @@ def classify_log(path: Path) -> str:
         return "component_lp"
     if parent == "logic_mip" or "logic_mip" in parent or "exact_baseline" in name:
         return "monthly_logic_mip"
+    if name.startswith("spatial_hex_"):
+        return "site_infrastructure_regularization" if "regularization" in name else "exact_annual_site"
     if name == "gurobi_run.log":
         return "main_model"
     if "exact_annual" in name:
@@ -393,6 +461,8 @@ def collect_solver_log_detail(run_dir: Path) -> pd.DataFrame:
     rows = []
     if logs_dir.exists():
         for path in sorted(logs_dir.rglob("*.log")):
+            if path.name == "pyomo_solve.log" or path.name.endswith(".pyomo.log"):
+                continue
             try:
                 parsed = parse_gurobi_log(path)
                 if parsed.get("initial_rows") is not None or parsed.get("solver_seconds") is not None:
@@ -477,6 +547,9 @@ def write_run_complexity(
     shared = preprocessing_scalars(data)
     phases = dict(phase_timing or {})
     resources = resource_monitor.as_metrics() if resource_monitor is not None else {}
+    if resource_monitor is not None:
+        trace_path = resource_monitor.write_trace(results_dir / "resource_usage.csv")
+        resources["resource_trace_written"] = 1 if trace_path is not None else 0
     extra = dict(extra_scalars or {})
     detail = collect_solver_log_detail(run_dir)
     summary = summarize_solver_logs(detail.copy())

@@ -1,3 +1,4 @@
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
 
 import math
@@ -18,7 +19,7 @@ from pyomo.environ import (
 
 
 def build_model(data: dict, cfg: dict):
-    """Build the June-14 type-aware EV CPO MILP from the uploaded notebook."""
+    """Build the seasonal, type-aware CPO infrastructure and dispatch MILP."""
     model = ConcreteModel()
 
     I = data["hex_ids"]
@@ -209,6 +210,11 @@ def build_model(data: dict, cfg: dict):
         return m.soc[i, mon, t] == m.soc[i, mon, t - 1] + charge - discharge
 
     model.BatteryDynamics = Constraint(model.I, model.M, model.H, rule=battery_dynamics_rule)
+    if cfg.get("bess_boundary") == "cyclic_day":
+        model.BatteryInitialJanuary.deactivate()
+        model.BatteryMonthLink.deactivate()
+        model.BatteryDailyCycle = Constraint(model.I, model.M, rule=lambda m, i, mon: m.soc[i, mon, 0] == m.soc[i, mon, last_h])
+
 
     def batt_cap_rule(m, i):
         return m.Batt[i] <= int(cfg["battery_max_units_per_hex"])

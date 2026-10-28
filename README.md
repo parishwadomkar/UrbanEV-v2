@@ -1,14 +1,20 @@
-# UrbanEV-v2 — Cost-aware, Adaptive and VIPV-enabled EV Charging in MATSim
+# Agent-based simulation for Cost-aware, Adaptive and VIPV-enabled EV Charging
 
+---
 UrbanEV-v2 extends UrbanEV for **spatiotemporal EV charging-demand estimation** in MATSim, combining **cost-aware charging**, **ToU-aware adaptive charging**, and optional **vehicle-integrated photovoltaics (VIPV)**. The `VIPVmain` branch supports both noVIPV baseline simulations and seasonal VIPV studies within the same framework.
 
-Use [`VIPVmain`](https://github.com/parishwadomkar/UrbanEV-v2/tree/VIPVmain) for current development and applications. The [`master`](https://github.com/parishwadomkar/UrbanEV-v2/tree/master) branch retains the original implementation associated with the [charging-demand article](https://doi.org/10.1016/j.trd.2026.105285). Reproduction of its published results should use the corresponding commit, inputs, and configuration.
+<p align="center">
+  <img src="assets/SimulatedEVbehavior.jpg" alt="MATSim–UrbanEV charging simulation with Simulated EV Charging User Behavior" width="100%">
+</p>
 
-![Simulated EV Charging User Behavior](https://github.com/user-attachments/assets/6b031a4d-e4e2-49a3-995c-f0d29c4a3032)
+<p align="center"><em>Simulated EV Charging User Behavior.</em></p>
+
+
+Use [`VIPVmain`](https://github.com/parishwadomkar/UrbanEV-v2/tree/VIPVmain) for current development and applications. The [`master`](https://github.com/parishwadomkar/UrbanEV-v2/tree/master) branch retains the original implementation associated with the [charging-demand article](https://doi.org/10.1016/j.trd.2026.105285).
 
 ---
 
-## What this repository adds (vs. UrbanEV)
+## What this repository enables (vs. [`UrbanEV`](https://doi.org/10.3390/wevj12010018))
 
 UrbanEV-v2 preserves UrbanEV's **multi-criteria charging behavior** and charging-infrastructure logic while extending the framework in three main directions:
 
@@ -70,17 +76,7 @@ Public chargers are defined by location/link, charger type, plug power, and plug
 ### 5) VIPV vehicle cohort (VIPV runs)
 
 VIPV-equipped vehicles can be specified using `pvVehiclesFile`.
-
-Example:
-
-```csv
-vehicle_id,pv_wp,pv_area_m2,pv_eff
-1838887,400.0,2.0,0.20
-1839223,400.0,2.0,0.20
-1839970,400.0,2.0,0.20
-```
-
-The first column is interpreted as the EV ID. Additional columns may be retained for scenario documentation, but the current loader uses the vehicle ID only. VIPV rated power is controlled globally through `pvWp`.
+The current loader uses the vehicle ID only. VIPV rated power is controlled globally through `pvWp`.
 
 The scenario runner requires its specified cohort CSV for VIPV cases. Missing files, malformed records, duplicate IDs, unknown fleet IDs, or a cohort size inconsistent with the positive `pvShare` stop the run. Leave `pvVehiclesFile` empty for noVIPV.
 
@@ -88,16 +84,16 @@ The scenario runner requires its specified cohort CSV for VIPV cases. Missing fi
 
 ## Repository layout (Gothenburg, Sweden)
 
-- `src/main/java/se/urbanEV/` — UrbanEV-v2 Java sources
-  - `charging/` — charging logic, ToU cost handling, and smart charging
-  - `discharging/` — driving and auxiliary energy consumption
-  - `fleet/` — EV fleet and battery representation
-  - `scoring/` — EV-specific and charging-cost scoring
-  - `stats/` — charging and SoC statistics
-  - `pv/` — VIPV generation and statistics
-- `src/main/python/Opti/` — [seasonal charging-infrastructure and energy planning](src/main/python/Opti/)
-- `scenarios/` — MATSim scenario inputs
-- `pom.xml` — Maven configuration
+- `src/main/java/se/urbanEV/` : UrbanEV-v2 Java sources
+  - `charging/`  : charging logic, ToU cost handling, and smart charging
+  - `discharging/`  : driving and auxiliary energy consumption
+  - `fleet/`  : EV fleet and battery representation
+  - `scoring/`  : EV-specific and charging-cost scoring
+  - `stats/`  : charging and SoC statistics
+  - `pv/`  : VIPV generation and statistics
+- `src/main/python/Opti/`  : [seasonal charging-infrastructure and energy planning](src/main/python/Opti/)
+- `scenarios/`  : MATSim scenario inputs
+- `pom.xml`  : Maven configuration
 
 A scenario typically contains:
 
@@ -284,18 +280,12 @@ For bugs, questions, or collaboration, please open a GitHub Issue in this reposi
 
 The cost-aware and adaptive framework used by both noVIPV and VIPV studies is described in:
 
-- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan** — *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior*. **Transportation Research Part D: Transport and Environment**, 154 (2026) 105285.  
+- **Parishwad, Omkar; Gao, Kun; Najafi, Arsalan**, *Integrated and Agent-Based Charging Demand Prediction Considering Cost-Aware and Adaptive Charging Behavior*. **Transportation Research Part D: Transport and Environment**, 154 (2026) 105285.
   DOI: https://doi.org/10.1016/j.trd.2026.105285
-
-UrbanEV-v2 is rooted in the original UrbanEV framework:
-
-- **Adenaw, L.; Lienkamp, M.** — *Multi-Criteria, Co-Evolutionary Charging Behavior: An Agent-Based Simulation of Urban Electromobility*. **World Electric Vehicle Journal**, 12(1), 18 (2021).  
-  DOI: https://doi.org/10.3390/wevj12010018
-- Upstream UrbanEV codebase: https://github.com/TUMFTM/UrbanEV
 
 Related infrastructure-planning methodology is described in:
 
-- **Parishwad, Omkar; Najafi, Arsalan; Yang, Ying; Gao, Kun** — *User-redirection-aware co-optimization of public charging with local photovoltaics and battery storage*. **Advances in Applied Energy**, 24 (2026) 100310.  
+- **Parishwad, Omkar; Najafi, Arsalan; Yang, Ying; Gao, Kun**, *User-redirection-aware co-optimization of public charging with local photovoltaics and battery storage*. **Advances in Applied Energy**, 24 (2026) 100310.
   DOI: https://doi.org/10.1016/j.adapen.2026.100310  
   Reference code: https://github.com/parishwadomkar/Large-scale-LBBD-Optimization
 
@@ -303,5 +293,12 @@ Additional project context:
 
 - **Omkar Parishwad — PhD Thesis / Chalmers publication page**  
   https://research.chalmers.se/publication/547894
+
+
+UrbanEV-v2 is rooted in the original UrbanEV framework:
+
+- **Adenaw, L.; Lienkamp, M.**, *Multi-Criteria, Co-Evolutionary Charging Behavior: An Agent-Based Simulation of Urban Electromobility*. **World Electric Vehicle Journal**, 12(1), 18 (2021).
+  DOI: https://doi.org/10.3390/wevj12010018
+- Upstream UrbanEV codebase: https://github.com/TUMFTM/UrbanEV
 
 ---
