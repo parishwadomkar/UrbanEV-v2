@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "sources": {
+    "urbanev": {
+      "repository": "https://github.com/parishwadomkar/UrbanEV-v2",
+      "branch": "VIPVmain",
+      "commit": "8ed3f90db5d047090e94814e3ffe913b4279e596",
+      "path_prefix": "src/main/python/Opti"
+    },
+    "lbbd": {
+      "repository": "https://github.com/parishwadomkar/Large-scale-LBBD-Optimization",
+      "branch": "main",
+      "commit": "8a085ad70b6b52a05d85a016b6b99c3578b72b94",
+      "path_prefix": ""
+    }
+  },
+  "components": {
+    "seasonal_model_and_inputs": "urbanev",
+    "decomposition_and_solver_workflows": "lbbd",
+    "reporting": "urbanev and lbbd"
+  },
+  "modifications": [
+    "Seasonal VIPV input selection and validation",
+    "Consistent annual CPO energy accounting and model controls",
+    "Exact annual site decomposition and infrastructure regularization",
+    "Input/code fingerprints, restart safeguards, and scenario comparisons",
+    "Local resource controls, figure exports, and repository maintenance",
+    "Removal of automatic resource-budget increases for zero-capacity components"
+  ]
+}

@@ -1,8 +1,9 @@
 @echo off
 setlocal EnableExtensions
+cd /d "%~dp0.."
 
 if "%~3"=="" (
-  echo Usage: %~nx0 monolithic^|lbbd "runs\RUN_1" "runs\RUN_2" ["runs\RUN_3" ...]
+  echo Usage: %~nx0 monolithic^|lbbd^|benders "runs\RUN_1" "runs\RUN_2" ["runs\RUN_3" ...]
   echo.
   echo The first run is used as the comparison baseline by default.
   exit /b 1

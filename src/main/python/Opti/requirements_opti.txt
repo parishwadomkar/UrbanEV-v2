@@ -1,0 +1,15 @@
+pyomo>=6.9,<7
+gurobipy>=11,<14
+pandas>=2.2,<3
+numpy>=1.26,<3
+geopandas>=1.0,<2
+networkx>=3.3,<4
+openpyxl>=3.1,<4
+psutil>=5.9,<8
+matplotlib>=3.8,<4
+contextily>=1.6,<2
+shapely>=2.0,<3
+pyproj>=3.6,<4
+pyogrio>=0.9,<1
+fiona>=1.9,<2
+xlrd>=2.0,<3

@@ -3,8 +3,8 @@ setlocal
 cd /d "%~dp0.."
 set "DATASET=%~1"
 if "%DATASET%"=="" set "DATASET=full"
-
-echo Running Monolithic: %DATASET% / PV_BESS_noRedirection
-python src\run_optimization.py --dataset %DATASET% --scenario no_redirection
-if errorlevel 1 exit /b %errorlevel%
-endlocal
+set "VIPV=%~2"
+if "%VIPV%"=="" set "VIPV=noVIPV"
+python src\run_optimization.py --dataset "%DATASET%" --vipv-scenario "%VIPV%" --scenario no_redirection
+set "RC=%ERRORLEVEL%"
+endlocal & exit /b %RC%

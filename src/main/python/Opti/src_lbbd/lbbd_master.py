@@ -1,3 +1,4 @@
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
 
 import math
@@ -5,8 +6,8 @@ from dataclasses import dataclass
 
 import pyomo.environ as pyo
 
-from network_feasibility import HallCertificate
-from decomposition_types import ComponentLogicOptimalityCut, LPBendersCut
+from src_lbbd.network_feasibility import HallCertificate
+from src_lbbd.decomposition_types import ComponentLogicOptimalityCut, LPBendersCut
 
 
 @dataclass(frozen=True)
@@ -130,7 +131,7 @@ def build_lbbd_master(data: dict, cfg: dict, slot_components: dict, global_compo
     batt_ub = {int(i): (0 if data.get("disable_bess", False) else int(cfg["battery_max_units_per_hex"])) for i in data["hex_ids"]}
 
     model.K = pyo.Param(model.C, initialize={str(c): float(data["charger_capacity_pub"][str(c)]) for c in data["PUB_TYPES"]})
-    model.ResourceUse = pyo.Param(model.C, initialize={str(c): float(data["charger_resources"][str(c)]) for c in data["PUB_TYPES"]})
+    model.Resource = pyo.Param(model.C, initialize={str(c): float(data["charger_resources"][str(c)]) for c in data["PUB_TYPES"]})
     model.Price = pyo.Param(model.C, initialize={str(c): float(data["charger_price"][str(c)]) for c in data["PUB_TYPES"]})
     model.CL = pyo.Param(model.I, initialize={int(i): float(data["cl"][int(i)]) for i in data["hex_ids"]})
     model.Days = pyo.Param(initialize=float(data["DAYS"]))
@@ -198,7 +199,7 @@ def build_lbbd_master(data: dict, cfg: dict, slot_components: dict, global_compo
     model.BattBitLink = pyo.Constraint(model.I, rule=batt_link)
     model.ResourceLimit = pyo.Constraint(
         model.I,
-        rule=lambda m, i: pyo.quicksum(m.ResourceUse[c] * m.x[i, c] for c in m.C) <= m.CL[i],
+        rule=lambda m, i: pyo.quicksum(m.Resource[c] * m.x[i, c] for c in m.C) <= m.CL[i],
     )
 
     component_demand: dict[tuple[str, int, int], float] = {}
@@ -367,6 +368,11 @@ def build_lbbd_master(data: dict, cfg: dict, slot_components: dict, global_compo
         return m.SOC[i, mon, 0] == m.SOC[i, prev, last_h]
 
     model.BatteryMonthLink = pyo.Constraint(model.I, model.M, rule=month_link)
+    if cfg.get("bess_boundary") == "cyclic_day":
+        model.BatteryInitialJanuary.deactivate()
+        model.BatteryMonthLink.deactivate()
+        model.BatteryDailyCycle = pyo.Constraint(model.I, model.M, rule=lambda m, i, mon: m.SOC[i, mon, 0] == m.SOC[i, mon, last_h])
+
     model.BatteryDynamics = pyo.Constraint(
         model.I, model.M, model.H,
         rule=lambda m, i, mon, t: m.SOC[i, mon, t]
@@ -506,6 +512,8 @@ def _configuration_mismatch(model: pyo.ConcreteModel, investment: InvestmentPoin
 
 
 def add_exact_config_cut(model: pyo.ConcreteModel, cut: ExactConfigCut) -> bool:
+    if not math.isfinite(float(cut.upper_bound)):
+        raise ValueError("An exact-configuration cut requires a finite proven upper bound")
     signature = (
         tuple(sorted((int(i), str(c), int(v)) for (i, c), v in cut.investment.x.items())),
         tuple(sorted((int(i), int(v)) for i, v in cut.investment.pv.items())),
@@ -537,8 +545,11 @@ def component_lp_cut_violation(model: pyo.ConcreteModel, cut: LPBendersCut, x_va
 
 
 def add_component_lp_cut(model: pyo.ConcreteModel, cut: LPBendersCut, tolerance: float = 1e-10) -> bool:
+    if not all(math.isfinite(float(v)) for v in [cut.constant, *cut.coefficients.values()]):
+        raise ValueError("Component LP cut coefficients and constant must be finite.")
     key = (str(cut.month), int(cut.time_index), int(cut.component_id))
-    coeff = {(int(i), str(c)): float(v) for (i, c), v in cut.coefficients.items() if abs(float(v)) > tolerance}
+    # Omitting a small positive term could lower an upper cut at another layout.
+    coeff = {(int(i), str(c)): float(v) for (i, c), v in cut.coefficients.items()}
     signature = (
         key, round(float(cut.constant), 6),
         tuple(sorted((i, c, round(v, 6)) for (i, c), v in coeff.items())),
@@ -634,6 +645,9 @@ def add_partial_component_logic_cut(model: pyo.ConcreteModel, cut: ComponentLogi
 
 
 def add_annual_lp_cut(model: pyo.ConcreteModel, cut: AnnualLPDualCut, tolerance: float = 1e-9) -> bool:
+    values = [cut.constant, *cut.x_coefficients.values(), *cut.pv_coefficients.values(), *cut.batt_coefficients.values()]
+    if not all(math.isfinite(float(v)) for v in values):
+        raise ValueError("Annual LP cut coefficients and constant must be finite.")
     signature = (
         round(float(cut.constant), 5),
         tuple(sorted((int(i), str(c), round(float(v), 5)) for (i, c), v in cut.x_coefficients.items() if abs(float(v)) > tolerance)),
@@ -643,9 +657,9 @@ def add_annual_lp_cut(model: pyo.ConcreteModel, cut: AnnualLPDualCut, tolerance:
     if signature in model._annual_lp_signatures:
         return False
     rhs = float(cut.constant)
-    rhs += pyo.quicksum(float(v) * model.x[int(i), str(c)] for (i, c), v in cut.x_coefficients.items() if abs(float(v)) > tolerance)
-    rhs += pyo.quicksum(float(v) * model.PV[int(i)] for i, v in cut.pv_coefficients.items() if abs(float(v)) > tolerance)
-    rhs += pyo.quicksum(float(v) * model.Batt[int(i)] for i, v in cut.batt_coefficients.items() if abs(float(v)) > tolerance)
+    rhs += pyo.quicksum(float(v) * model.x[int(i), str(c)] for (i, c), v in cut.x_coefficients.items())
+    rhs += pyo.quicksum(float(v) * model.PV[int(i)] for i, v in cut.pv_coefficients.items())
+    rhs += pyo.quicksum(float(v) * model.Batt[int(i)] for i, v in cut.batt_coefficients.items())
     model.AnnualLPCuts.add(model.Eta <= rhs)
     model._annual_lp_signatures.add(signature)
     return True

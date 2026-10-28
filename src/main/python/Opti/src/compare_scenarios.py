@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
 
 import argparse
@@ -11,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+from provenance import validate_comparison
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -137,10 +139,14 @@ def _detect_method(run_dir: Path, metadata: dict[str, Any], transcript: str) -> 
         return "LBBD"
     if method == "monolithic":
         return "Monolithic"
+    if method == "benders":
+        return "Benders"
     if "LBBD" in run_dir.name.upper() or "LBBD" in transcript[:1000].upper():
         return "LBBD"
     if "MONOLITHIC" in transcript[:1000].upper():
         return "Monolithic"
+    if "BENDERS" in run_dir.name.upper() or "BENDERS" in transcript[:1000].upper():
+        return "Benders"
     return "Unknown"
 
 
@@ -313,6 +319,15 @@ def _solver_metrics(run_dir: Path, method: str, metadata: dict[str, Any], transc
             result["threads"] = threads
         if not math.isfinite(_finite(result["total_runtime_s"])):
             result["total_runtime_s"] = _finite(metadata.get("elapsed_seconds"))
+    if method == "Benders":
+        settings = _load_json(run_dir / "run_context.json").get("settings", {})
+        result.update(achieved_gap_pct=100.0 * _finite(metadata.get("certified_gap")),
+                      requested_gap_pct=100.0 * _finite(settings.get("benders_gap")), threads=_finite(settings.get("threads")))
+    certificate = _load_json(run_dir / "results" / "solver_certificate.json")
+    if certificate:
+        result.update(achieved_gap_pct=100.0 * _finite(certificate.get("gurobi_mip_gap")),
+                      requested_gap_pct=100.0 * _finite(certificate.get("requested_mip_gap")),
+                      termination=certificate.get("termination_reason", ""))
     return result
 
 
@@ -320,7 +335,6 @@ def _recompute_home_chargers(project_root: Path, dataset: str, vipv_scenario: st
     import geopandas as gpd
 
     paths = resolve_scenario_paths(project_root, dataset, vipv_scenario)
-    cfg = json.loads((project_root / "config" / "model_config.json").read_text(encoding="utf-8"))
     demand = gpd.read_file(paths["demand_shapefile"], columns=["HexID"])
     parking = gpd.read_file(paths["parking_shapefile"])
     if "HexID" not in demand.columns or "HexID" not in parking.columns or "homeChar" not in parking.columns:
@@ -329,7 +343,9 @@ def _recompute_home_chargers(project_root: Path, dataset: str, vipv_scenario: st
     parking = parking.copy()
     parking["HexID"] = pd.to_numeric(parking["HexID"], errors="coerce")
     parking = parking[parking["HexID"].isin(active_hex)]
-    home = pd.to_numeric(parking["homeChar"], errors="coerce").fillna(0.0) + float(cfg.get("home_charger_add", 0))
+    from input_validation import validate_capacity_inputs
+    parking = validate_capacity_inputs(parking)
+    home = parking["homeChar"]
     return float(home.sum())
 
 
@@ -464,7 +480,7 @@ def parse_args() -> argparse.Namespace:
             "The workbook emphasizes cross-scenario infrastructure, energy, flexibility, economics, and solver performance."
         )
     )
-    parser.add_argument("--method", choices=["auto", "monolithic", "lbbd"], default="auto")
+    parser.add_argument("--method", choices=["auto", "monolithic", "lbbd", "benders"], default="auto")
     parser.add_argument("--run", action="append", default=[], help="Completed run folder. Repeat for each run.")
     parser.add_argument("--runs", nargs="+", default=[], help="Alternative: provide multiple run folders after one --runs flag.")
     parser.add_argument("--label", action="append", default=[], help="Optional display label; repeat in the same order as runs.")
@@ -476,6 +492,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not reopen demand/parking inputs to reconstruct legacy metrics such as exogenous home-charger count.",
     )
+    parser.add_argument("--allow-partial", action="store_true")
+    parser.add_argument("--comparison-axis", choices=["vipv", "technology", "redirection"], default="vipv")
     return parser.parse_args()
 
 
@@ -483,7 +501,20 @@ def _load_run(run_dir: Path) -> dict[str, Any]:
     if not run_dir.exists():
         raise FileNotFoundError(f"Run folder not found: {run_dir}")
     summary = _load_summary(run_dir)
+    infrastructure_path = run_dir / "results" / "infrastructure_by_hex.csv"
+    infrastructure = pd.read_csv(infrastructure_path) if infrastructure_path.exists() else None
+    for key, column in [("PV_panels_installed", "PV_panels"), ("battery_units_installed", "Battery_units")]:
+        if not math.isfinite(_finite(summary.get(key))) and infrastructure is not None and column in infrastructure:
+            values = pd.to_numeric(infrastructure[column], errors="raise")
+            if values.isna().any() or not values.map(math.isfinite).all():
+                raise ValueError(f"Non-finite infrastructure values in {column}: {run_dir}")
+            summary[key] = float(values.sum())
     metadata = _load_json(run_dir / "run_metadata.json")
+    context = _load_json(run_dir / "run_context.json")
+    metadata.setdefault("method", context.get("method", ""))
+    metadata.setdefault("effective_settings", context.get("settings", {}))
+    for key in ["dataset", "vipv_scenario", "scenario"]:
+        metadata.setdefault(key, context.get("settings", {}).get(key))
     transcript = _read_text(run_dir / "README_RUN.txt")
     method = _detect_method(run_dir, metadata, transcript)
     dataset = _detect_dataset(run_dir, summary, metadata, transcript)
@@ -676,7 +707,7 @@ def _write_summary_sheet(writer: pd.ExcelWriter, runs: list[dict[str, Any]], lab
             elif fmt == "percent":
                 cell.number_format = '0.00%;[Red]-0.00%;0.00%'
             elif fmt == "percent6":
-                cell.number_format = '0.000000%;[Red]-0.000000%;0.000000%'
+                cell.number_format = '0.000000000%;[Red]-0.000000000%;0.000000000%'
 
     ws.column_dimensions["A"].width = 48
     ws.column_dimensions["B"].width = 20
@@ -887,6 +918,7 @@ def main() -> int:
     if len(run_values) < 2:
         raise SystemExit("At least two completed run folders are required. Use repeated --run flags or --runs path1 path2 ...")
     run_paths = _resolve_runs(project_root, run_values)
+    validate_comparison(run_paths, across_scenarios=True, allow_partial=args.allow_partial, axis=args.comparison_axis)
     runs = [_load_run(path) for path in run_paths]
     method = _validate_methods(runs, args.method)
 

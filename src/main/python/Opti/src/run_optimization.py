@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 # coding: utf-8
 from __future__ import annotations
 
 import argparse
+import json
 import importlib
 import os
 import sys
@@ -18,11 +20,14 @@ for _stream_name in ("stdout", "stderr"):
         except Exception:
             pass
 
-from utils import ensure_dir, load_json, resolve_project_path
+from utils import ensure_dir, load_json
 from data_loader import check_input_paths, load_inputs
 from preprocessing import preprocess
 from model_builder import apply_scenario, apply_hard_no_slack, build_model
-from solve_model import solve_model
+from solve_model import solve_model, solver_certificate
+from spatial_exact import add_spatial_arguments, solve_spatial_exact
+from provenance import record_run_context
+from input_validation import disable_redirection
 from export_results import export_all, print_summary
 from visualize_results import generate_run_figures
 from run_profiles import apply_profile_defaults, load_run_profile
@@ -40,10 +45,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scenario",
         choices=["with_redirection", "no_redirection"],
-        default="with_redirection",
+        default="no_redirection",
         help="Optimization scenario."
     )
     add_input_selection_arguments(parser)
+    add_spatial_arguments(parser)
     parser.add_argument(
         "--hard-no-slack",
         action="store_true",
@@ -184,6 +190,7 @@ def parse_args() -> argparse.Namespace:
         default=150,
         help="Maximum number of annual redirection corridors drawn on the flow map."
     )
+    parser.add_argument("--generate-figures", dest="skip_figures", action="store_false", default=None)
     return parser.parse_args()
 
 
@@ -459,6 +466,9 @@ def _run_optimization_impl(
     data["vipv_scenario"] = args.vipv_scenario
     data["disable_pv"] = args.disable_pv
     data["disable_bess"] = args.disable_bess
+    record_run_context(project_root, run_dir, data, model_cfg, args, "Monolithic")
+    if args.scenario == "no_redirection":
+        disable_redirection(data)
 
     print(f"Hex cells: {len(data['hex_ids'])}")
     print(f"Active redirection arc-slots: {len(data['allowed_st']):,}")
@@ -504,11 +514,38 @@ def _run_optimization_impl(
     phase_timing["solve_seconds"] = time.perf_counter() - phase_started
     print(results.solver)
 
-    term = str(results.solver.termination_condition).lower()
-    if "infeasible" in term:
+    certificate = solver_certificate(results, model, run_dir / "logs" / "gurobi_run.log")
+    certificate["requested_mip_gap"] = solver_cfg.get("mip_gap")
+    if args.regularize_infrastructure:
+        if args.scenario != "no_redirection":
+            raise ValueError("Infrastructure regularization currently requires --scenario no_redirection.")
+        if certificate["has_loaded_incumbent"]:
+            budget = max(1.0, float(args.time_limit) - phase_timing["solve_seconds"])
+            tick = time.perf_counter()
+            model, certificate, spatial_metadata = solve_spatial_exact(
+                data, model_cfg, args, run_dir, solver_cfg, assembled_model=model,
+                prior_certificate=certificate, budget=budget,
+            )
+            phase_timing["infrastructure_regularization_seconds"] = time.perf_counter() - tick
+            (run_dir / "results" / "infrastructure_regularization.json").write_text(
+                json.dumps(spatial_metadata, indent=2), encoding="utf-8"
+            )
+    (run_dir / "results" / "solver_certificate.json").write_text(
+        json.dumps(certificate, indent=2), encoding="utf-8"
+    )
+    print(f"Solver certificate: {certificate}")
+
+    solver_limited = certificate["termination_reason"] in {
+        "time_limit", "memory_limit", "objective_limit", "other_usable_termination"
+    }
+    if solver_limited and certificate["has_loaded_incumbent"]:
         print(
-            "\nModel is infeasible under the current options. "
-            "If --hard-no-slack was used, rerun without it and inspect slack diagnostics."
+            "Solver stopped at a configured/resource limit with a feasible incumbent. "
+            "The incumbent will be exported, but the requested MIP gap may not have been reached."
+        )
+    if not certificate["has_loaded_incumbent"]:
+        print(
+            "\nNo feasible incumbent was loaded; only the solver certificate and complexity diagnostics can be exported."
         )
         print(f"Run directory: {run_dir}")
         monitor.stop()
@@ -518,7 +555,8 @@ def _run_optimization_impl(
             phase_timing=phase_timing,
             model_stats={"main_model": main_model_stats},
             resource_monitor=monitor,
-            extra_scalars={"termination_infeasible": 1},
+            extra_scalars={"termination_reason": certificate["termination_reason"],
+                           "valid_bound_SEK": certificate["valid_bound_SEK"]},
         )
         return 2
 
@@ -528,6 +566,12 @@ def _run_optimization_impl(
     phase_started = time.perf_counter()
     export_all(model, data, model_cfg, run_dir)
     phase_timing["export_seconds"] = time.perf_counter() - phase_started
+    phase_timing["total_runtime_seconds"] = time.perf_counter() - total_started
+    write_run_complexity(
+        run_dir, "Monolithic", data, phase_timing=phase_timing,
+        model_stats={"main_model": main_model_stats}, resource_monitor=monitor,
+        extra_scalars={"solver_mip_gap_requested": solver_cfg.get("mip_gap")},
+    )
 
     phase_started = time.perf_counter()
     if not args.skip_figures:
@@ -555,11 +599,13 @@ def _run_optimization_impl(
     )
 
     print(f"Run finished successfully. Run directory: {run_dir}")
-    return 0
+    return 0 if certificate["gurobi_mip_gap"] is not None and certificate["gurobi_mip_gap"] <= float(certificate["requested_mip_gap"]) + 1e-9 else 3
 
 
 def main() -> int:
     args = parse_args()
+    if args.regularize_infrastructure and args.scenario != "no_redirection":
+        raise ValueError("Infrastructure regularization requires --scenario no_redirection.")
     project_root = Path(args.project_root).resolve()
     resolve_input_selection(args, project_root)
     paths, model_cfg, solver_cfg, dataset = load_configs(project_root, args.dataset, args.vipv_scenario)
@@ -603,6 +649,7 @@ def main() -> int:
     if args.solver_cuts is not None:
         solver_cfg["cuts"] = int(args.solver_cuts)
 
+    args._solver_cfg = dict(solver_cfg)
     if args.smoke:
         return run_smoke(project_root, paths, model_cfg)
 

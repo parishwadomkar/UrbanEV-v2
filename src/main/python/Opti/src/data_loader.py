@@ -1,8 +1,10 @@
+"""Modified for the UrbanEV seasonal integration, 2026-10-22. See SOURCE_PROVENANCE.json."""
 from __future__ import annotations
 
 from pathlib import Path
 import geopandas as gpd
 import pandas as pd
+from provenance import read_provenance
 
 
 def _read_pvgis(path: Path) -> pd.DataFrame:
@@ -40,7 +42,20 @@ def load_inputs(paths: dict) -> dict:
     if not str(pvgis_file):
         raise KeyError("Resolved paths must contain 'pvgis_file' (or legacy 'pvgis_excel').")
 
+    required = [demand_shapefile, parking_shapefile, distance_csv, spot_price_csv, pvgis_file]
+    for path in required:
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing input file: {path}")
+        with path.open("rb") as handle:
+            head = handle.read(256)
+        if head.startswith(b"version https://git-lfs.github.com/spec/"):
+            raise ValueError(f"Git LFS pointer instead of input data: {path}")
+        if path.suffix.lower() == ".gpkg" and not head.startswith(b"SQLite format 3\x00"):
+            raise ValueError(f"Invalid GeoPackage container: {path}")
+    provenance = read_provenance(paths)
     return {
+        "paths": dict(paths),
+        "provenance": provenance,
         "gdf": gpd.read_file(demand_shapefile),
         "parking_gdf": gpd.read_file(parking_shapefile),
         "dist_df": pd.read_csv(distance_csv),
