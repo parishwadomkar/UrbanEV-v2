@@ -11,5 +11,5 @@ contextily>=1.6,<2
 shapely>=2.0,<3
 pyproj>=3.6,<4
 pyogrio>=0.9,<1
-fiona>=1.9,<2
+fiona>=1.10.1,<2
 xlrd>=2.0,<3
