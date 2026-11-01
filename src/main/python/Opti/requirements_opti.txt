@@ -1,5 +1,5 @@
 pyomo>=6.9,<7
-gurobipy>=11,<14
+gurobipy>=13.0.3,<14
 pandas>=2.2,<3
 numpy>=1.26,<3
 geopandas>=1.0,<2
