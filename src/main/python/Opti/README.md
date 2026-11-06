@@ -132,7 +132,7 @@ python -m flake8 src src_lbbd src_benders scripts tests --select=E9,F63,F7,F82,F
 python -m pytest -q tests
 ```
 
-The parent repository's [Python CI workflow](../../../../.github/workflows/ci.yml) runs these checks on Linux and Windows with synthetic fixtures and HiGHS; a Gurobi license and production inputs are not required. The Java workflow is separate. [Dependabot](../../../../.github/dependabot.yml) tracks Python and GitHub Actions dependencies. [AGENTS.md](AGENTS.md) provides scoped contributor and coding-assistant guidance.
+The parent repository's [Python CI workflow](../../../../.github/workflows/ci.yml) runs these checks on Linux and Windows with synthetic fixtures and HiGHS; a Gurobi license and production inputs are not required. The Java workflow is separate. [Dependabot](../../../../.github/dependabot.yml) tracks Maven, Python, and GitHub Actions dependencies. See the [contributor guide](CONTRIBUTING.md) for model conventions and local checks.
 
 ## References and support
 

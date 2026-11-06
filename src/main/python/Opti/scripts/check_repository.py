@@ -20,8 +20,9 @@ def main():
     configs.extend((ROOT / ".vscode").glob("*.json"))
     for path in configs:
         json.loads(path.read_text(encoding="utf-8"))
-    documents = list(ROOT.glob("*.md"))
-    for name in ("assets", "config", "src_benders"):
+    repository = ROOT.parents[3]
+    documents = list(repository.glob("*.md")) + list(ROOT.glob("*.md"))
+    for name in ("assets", "config", "data", "src_benders"):
         documents.extend((ROOT / name).glob("*.md"))
     failures = []
     for path in documents:
@@ -34,8 +35,7 @@ def main():
                 continue
             destination = path.parent / unquote(parsed.path)
             if not destination.exists():
-                failures.append(f"{path.relative_to(ROOT)}: missing link target {target}")
-    repository = ROOT.parents[3]
+                failures.append(f"{path.relative_to(repository)}: missing link target {target}")
     workflows = repository / ".github" / "workflows"
     for path in workflows.glob("*.y*ml"):
         document = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)

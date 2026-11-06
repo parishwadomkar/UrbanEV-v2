@@ -30,4 +30,4 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Store/output/
+.DS_Store

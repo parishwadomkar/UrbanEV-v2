@@ -1,21 +1,16 @@
-# Local inputs only
+# Optimization inputs
 
-No input data are shipped in this archive. Restore your newly prepared files here after replacing the code folder.
+The default `full` dataset contains ten treatment folders defined in [paths.json](../config/paths.json). Each demand layer covers all four seasons.
 
-| Dataset | Per-treatment directory | Required files |
-|---|---|---|
-| Full | `data/full/<VIPV_SCENARIO>/` | `demandHexGrid_optimization_full.gpkg`, `shortestpath.csv`, `CharParkfull.shp` and sidecars |
-| Small | `data/small/<VIPV_SCENARIO>/` | `demandHexGrid_optimization_shrunk30.gpkg`, `shortestpath.csv`, `CharParksmall.shp` and sidecars |
-| Shared | `data/` | `PVGISdata.csv`, `ElPrice.csv` |
+| Location | Required inputs |
+| --- | --- |
+| `full/<VIPV_SCENARIO>/` | Demand GeoPackage, shortest-path CSV, and `CharParkfull.shp` with its sidecars |
+| `data/` | `PVGISdata.csv` and `ElPrice.csv` |
 
-The ten exact treatment names are defined in `config/paths.json`. Each demand layer contains all four seasons. Do not create four independent optimization folders for a single treatment's seasons.
+The [input contract](../config/README.md) describes units, required fields, and model policies. Public installation budgets (`PublicRes`), home-charger counts (`homeChar`), and panel limits (`Panels`) are supplied directly.
 
-Optional `provenance.json` is generated next to each demand layer by the registration workflow; no prefilled registration is included. See [the provenance guide](../docs/DATA_PROVENANCE.md) for schemas, units, time alignment, registration and the limitations for spatial subsets.
-
-Validate without solving:
+Validate the published inputs from `src/main/python/Opti` without solving:
 
 ```powershell
 python scripts/validate_inputs.py --dataset full --all-scenarios
 ```
-
-The default `small` selection in `config/paths.json` is retained from UrbanEV. The Windows wrappers and matrix runner explicitly default to `full`. Always specify the dataset in final experiment commands.

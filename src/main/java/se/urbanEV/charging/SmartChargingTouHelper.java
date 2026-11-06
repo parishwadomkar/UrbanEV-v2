@@ -53,7 +53,7 @@ public final class SmartChargingTouHelper {
             }
         }
 
-        // Find cost-minimizing starts (proxy = ToU multiplier at START time)
+        // Compare tariffs over each candidate charging interval
         double bestCost = Double.POSITIVE_INFINITY;
         List<Double> bestStarts = new ArrayList<>(64);
         for (double t = arrivalTime; t <= latestStart + 1e-3; t += STEP) {
@@ -113,7 +113,7 @@ public final class SmartChargingTouHelper {
 
         double chosen = bestStarts.get(0);
         if (wSum > 0.0) {
-            Random rnd = MatsimRandom.getLocalInstance(); // thread-local RNG :contentReference[oaicite:1]{index=1}
+            Random rnd = MatsimRandom.getLocalInstance(); // thread-local RNG
             double r = rnd.nextDouble() * wSum;
             for (int i = 0; i < w.length; i++) {
                 r -= w[i];
