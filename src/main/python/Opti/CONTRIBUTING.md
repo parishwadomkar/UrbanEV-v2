@@ -1,6 +1,6 @@
 # UrbanEV-Opti contributor guidance
 
-These instructions apply to this directory and its descendants. The Java project and repository-level GitHub configuration are maintained at the UrbanEV-v2 root.
+The Java project and repository-level GitHub configuration are maintained at the UrbanEV-v2 root.
 
 Preserve the seasonal demand mapping, annual objective, charger-resource interpretation, private-home boundary, and selected BESS convention unless a requested change explicitly concerns them. Read `PublicRes`, `homeChar`, and `Panels` directly; do not introduce installation allowances or capacity divisors.
 

@@ -8,12 +8,18 @@ on:
       - src/main/python/Opti/**
       - '!src/main/python/Opti/data/**'
       - '!src/main/python/Opti/runs/**'
+      - src/main/python/Opti/data/README.md
+      - README.md
+      - SECURITY.md
       - .github/workflows/ci.yml
   pull_request:
     paths:
       - src/main/python/Opti/**
       - '!src/main/python/Opti/data/**'
       - '!src/main/python/Opti/runs/**'
+      - src/main/python/Opti/data/README.md
+      - README.md
+      - SECURITY.md
       - .github/workflows/ci.yml
 
 permissions:

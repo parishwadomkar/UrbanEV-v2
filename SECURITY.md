@@ -1,21 +1,7 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+Security fixes target the current `VIPVmain` branch. The `master` branch is retained as the reference implementation for the original charging-demand study.
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Report suspected vulnerabilities privately to [the maintainer](mailto:omkarp@chalmers.se). Include the affected commit, environment, impact, and steps to reproduce the issue. Please keep credentials, private input data, and exploit details out of public issues.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
-## Reporting a Vulnerability
-
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Use the [issue tracker](https://github.com/parishwadomkar/UrbanEV-v2/issues) for ordinary bugs and reproducibility questions.
