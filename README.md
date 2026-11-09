@@ -230,7 +230,7 @@ Demand outputs can also be supplied to [UrbanEV-Opti](src/main/python/Opti/) for
 
 ## Requirements
 
-- **JDK 17 recommended**, compiling to Java 11 bytecode for **MATSim 12.0**
+- **JDK 11 or 17**, compiling to Java 11 bytecode for **MATSim 12.0**; CI verifies both versions on Linux and Windows
 - **Maven 3.9.x**
 
 Memory requirements depend strongly on the simulated population sample and number of iterations.
@@ -244,16 +244,18 @@ Clone the current framework branch and build the executable jar:
 ```bash
 git clone --branch VIPVmain https://github.com/parishwadomkar/UrbanEV-v2.git
 cd UrbanEV-v2
-mvn clean install
+mvn --batch-mode --no-transfer-progress clean verify
 ```
 
-Run a scenario by supplying its MATSim configuration file:
+From the repository root, run a scenario by supplying its MATSim configuration file:
 
 ```bash
-java -Xms16g -Xmx16g -jar target/*jar-with-dependencies.jar <path-to-config.xml>
+java --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED -Xms1g -Xmx16g -jar target/urban_ev-0.1-jar-with-dependencies.jar scenarios/sweden/config1pct.xml
 ```
 
-For larger 10% scenarios, increase the JVM memory allocation as required by the available hardware.
+Replace the configuration path for other scenarios. The example uses a 1 GB initial heap and a 16 GB maximum heap; adjust `-Xmx` for larger populations while leaving memory for the operating system and other applications.
+
+In IntelliJ IDEA, import the root `pom.xml` as a Maven project and select JDK 11 or 17. Reload all Maven projects after dependency changes. Use the `urban_ev` module classpath and the repository root as the run working directory; the shared `Main` configuration supplies the same scenario path and JVM options shown above.
 
 ---
 
